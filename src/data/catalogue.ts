@@ -277,7 +277,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Data Exfiltration',
     name: 'Bulk download from SaaS before resignation',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: SaaS collection/exfiltration with workforce context. ATT&CK: T1530 Data from Cloud Storage, T1567 Exfiltration Over Web Service.',
+    techniqueAlignment: 'Insider threat: SaaS collection/exfiltration with workforce context. ATT&CK: T1530 Data from Cloud Storage, T1567 Exfiltration Over Web Service.',
     description: 'An employee downloads unusually large volumes of documents or records from SaaS systems near resignation or termination.',
     investigationQuestions: [
       {
@@ -304,7 +304,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Data Exfiltration',
     name: 'Unusual cloud object reads followed by external sharing',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: cloud/SaaS collection, sharing, and exfiltration indicators. ATT&CK: T1530 Data from Cloud Storage, T1567.002 Exfiltration to Cloud Storage.',
+    techniqueAlignment: 'Insider threat: cloud/SaaS collection, sharing, and exfiltration indicators. ATT&CK: T1530 Data from Cloud Storage, T1567.002 Exfiltration to Cloud Storage.',
     description: 'A user reads many sensitive cloud objects and creates public links, external shares, or permissive ACLs.',
     investigationQuestions: [
       {
@@ -330,7 +330,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Data Exfiltration',
     name: 'Sensitive repository clone or archive creation',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: source code/IP collection and staging before possible transfer. ATT&CK: T1213 Data from Information Repositories, T1560 Archive Collected Data.',
+    techniqueAlignment: 'Insider threat: source code/IP collection and staging before possible transfer. ATT&CK: T1213 Data from Information Repositories, T1560 Archive Collected Data.',
     description: 'A developer or contractor clones sensitive repositories or creates large archives outside normal patterns.',
     investigationQuestions: [
       {
@@ -356,7 +356,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Privilege Misuse',
     name: 'Privileged access outside approved change window',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: misuse of authorized privileged access and role-based risk. ATT&CK: T1078 Valid Accounts, T1548 Abuse Elevation Control Mechanism.',
+    techniqueAlignment: 'Insider threat: misuse of authorized privileged access and role-based risk. ATT&CK: T1078 Valid Accounts, T1548 Abuse Elevation Control Mechanism.',
     description: 'Admin commands or role activations occur without matching ticket, approval, or maintenance window.',
     investigationQuestions: [
       {
@@ -382,7 +382,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Privilege Misuse',
     name: 'Mass permission grant or role escalation',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: unauthorized access expansion and privilege manipulation. ATT&CK: T1098 Account Manipulation, T1078.003 Local Accounts.',
+    techniqueAlignment: 'Insider threat: unauthorized access expansion and privilege manipulation. ATT&CK: T1098 Account Manipulation, T1078.003 Local Accounts.',
     description: 'A user grants broad access, escalates roles, or changes group membership at abnormal volume or scope.',
     investigationQuestions: [
       {
@@ -408,7 +408,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Policy Bypass / Shadow IT',
     name: 'OAuth app consent to unapproved third-party application',
     severity: 'medium',
-    techniqueAlignment: 'Internal scenario scenario: policy bypass, unapproved tooling, and shadow IT data exposure. ATT&CK: T1528 Steal Application Access Token, T1550.001 Application Access Token.',
+    techniqueAlignment: 'Insider threat: policy bypass, unapproved tooling, and shadow IT data exposure. ATT&CK: T1528 Steal Application Access Token, T1550.001 Application Access Token.',
     description: 'A user authorizes an unapproved OAuth app that can read mail, files, or profile data.',
     investigationQuestions: [
       {
@@ -434,7 +434,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Fraud / Abuse of Business Systems',
     name: 'Customer or account record tampering',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: abuse of business systems and unauthorized modification. ATT&CK: T1565 Data Manipulation, T1078 Valid Accounts.',
+    techniqueAlignment: 'Insider threat: abuse of business systems and unauthorized modification. ATT&CK: T1565 Data Manipulation, T1078 Valid Accounts.',
     description: 'An employee modifies customer, payroll, expense, or account records outside normal duties or approval paths.',
     investigationQuestions: [
       {
@@ -460,7 +460,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Sabotage / Disruption',
     name: 'Destructive admin commands or mass deletes',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: sabotage, destruction, disruption, and monitoring disablement. ATT&CK: T1485 Data Destruction, T1489 Service Stop, T1490 Inhibit System Recovery.',
+    techniqueAlignment: 'Insider threat: sabotage, destruction, disruption, and monitoring disablement. ATT&CK: T1485 Data Destruction, T1489 Service Stop, T1490 Inhibit System Recovery.',
     description: 'A privileged or application user deletes resources, disables monitoring, or performs destructive commands at scale.',
     investigationQuestions: [
       {
@@ -487,7 +487,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Offboarding / Workforce Risk',
     name: 'Access retained past termination date',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: offboarding failure and continued use of valid access. ATT&CK: T1078 Valid Accounts.',
+    techniqueAlignment: 'Insider threat: offboarding failure and continued use of valid access. ATT&CK: T1078 Valid Accounts.',
     description: 'Terminated or transferred personnel retain access and attempt to sign in or use sensitive applications.',
     investigationQuestions: [
       {
@@ -514,7 +514,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Access Misuse',
     name: 'Valid access to unusual systems or data',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: role-based risk and unusual use of valid access. ATT&CK: T1078 Valid Accounts, T1213 Data from Information Repositories.',
+    techniqueAlignment: 'Insider threat: role-based risk and unusual use of valid access. ATT&CK: T1078 Valid Accounts, T1213 Data from Information Repositories.',
     description: 'A user accesses systems, repositories, or records outside expected role, peer, location, or project patterns.',
     investigationQuestions: [
       {
@@ -541,7 +541,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Reconnaissance / Collection',
     name: 'Search and reconnaissance for sensitive data',
     severity: 'medium',
-    techniqueAlignment: 'Internal scenario scenario: indicator-building for pre-collection search and discovery activity. ATT&CK: T1083 File and Directory Discovery, T1087 Account Discovery, T1213 Data from Information Repositories.',
+    techniqueAlignment: 'Insider threat: indicator-building for pre-collection search and discovery activity. ATT&CK: T1083 File and Directory Discovery, T1087 Account Discovery, T1213 Data from Information Repositories.',
     description: 'A user performs unusual searches, directory browsing, repository enumeration, or command-line discovery before accessing sensitive data.',
     investigationQuestions: [
       {
@@ -560,7 +560,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Data Exfiltration',
     name: 'Sensitive data copied to removable media',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: UAM/removable-media indicator and exfiltration pathway. ATT&CK: T1052.001 Exfiltration over USB, T1025 Data from Removable Media.',
+    techniqueAlignment: 'Insider threat: UAM/removable-media indicator and exfiltration pathway. ATT&CK: T1052.001 Exfiltration over USB, T1025 Data from Removable Media.',
     description: 'Sensitive files are staged or copied to USB or other removable storage outside normal duties.',
     investigationQuestions: [
       {
@@ -579,7 +579,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Data Exfiltration',
     name: 'Email forwarding or attachment exfiltration',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: email disclosure/exfiltration indicators. ATT&CK: T1114 Email Collection, T1114.003 Email Forwarding Rule, T1048 Exfiltration Over Alternative Protocol.',
+    techniqueAlignment: 'Insider threat: email disclosure/exfiltration indicators. ATT&CK: T1114 Email Collection, T1114.003 Email Forwarding Rule, T1048 Exfiltration Over Alternative Protocol.',
     description: 'A user sends sensitive attachments externally or creates forwarding rules that route mail to non-approved destinations.',
     investigationQuestions: [
       {
@@ -598,7 +598,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Concealment / Evidence Integrity',
     name: 'Logging disabled or evidence tampered',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: concealment, control disablement, and investigative evidence integrity. ATT&CK: T1562.001 Impair Defenses: Disable or Modify Tools, T1070 Indicator Removal.',
+    techniqueAlignment: 'Insider threat: concealment, control disablement, and investigative evidence integrity. ATT&CK: T1562.001 Impair Defenses: Disable or Modify Tools, T1070 Indicator Removal.',
     description: 'An authorized user disables logging, removes audit trails, tampers with endpoint sensors, or changes retention/configuration to conceal activity.',
     investigationQuestions: [
       {
@@ -617,7 +617,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Physical / Cyber Correlation',
     name: 'Physical access anomaly near cyber activity',
     severity: 'medium',
-    techniqueAlignment: 'Internal scenario scenario: multidisciplinary cyber/physical/case-management correlation. No direct ATT&CK technique (physical-security signal); correlate with T1078 Valid Accounts sessions.',
+    techniqueAlignment: 'Insider threat: multidisciplinary cyber/physical/case-management correlation. No direct ATT&CK technique (physical-security signal); correlate with T1078 Valid Accounts sessions.',
     description: 'Badge or restricted-area activity is inconsistent with cyber sessions, device location, or role context during a sensitive event.',
     investigationQuestions: [
       {
@@ -636,7 +636,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Non-malicious Threat Scenario',
     name: 'Negligent or mistaken sensitive-data disclosure',
     severity: 'medium',
-    techniqueAlignment: 'Internal scenario scenario: negligent/mistaken internal types requiring corroboration and mitigation, not prediction. Not adversary-technique aligned; treat as policy/process weakness rather than an ATT&CK behaviour.',
+    techniqueAlignment: 'Insider threat: negligent/mistaken internal types requiring corroboration and mitigation, not prediction. Not adversary-technique aligned; treat as policy/process weakness rather than an ATT&CK behaviour.',
     description: 'A user accidentally shares sensitive information through misaddressed email, overly broad SaaS sharing, or misunderstanding of policy.',
     investigationQuestions: [
       {
@@ -656,7 +656,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Compromised / Outsmarted Internal',
     name: 'Compromised or outsmarted user causes account-driven activity',
     severity: 'high',
-    techniqueAlignment: 'Internal scenario scenario: non-malicious compromised/outsmarted internal category with cyber corroboration. ATT&CK: T1566 Phishing, T1078 Valid Accounts, T1621 Multi-Factor Authentication Request Generation.',
+    techniqueAlignment: 'Insider threat: non-malicious compromised/outsmarted internal category with cyber corroboration. ATT&CK: T1566 Phishing, T1078 Valid Accounts, T1621 Multi-Factor Authentication Request Generation.',
     description: 'An account or user is manipulated through phishing, token theft, social engineering, or deceptive workflow to perform risky actions.',
     investigationQuestions: [
       {
@@ -676,7 +676,7 @@ export const riskVectors: RiskVector[] = [
     domain: 'Collusion',
     name: 'Cross-user collusion to access, collect, or transfer data',
     severity: 'critical',
-    techniqueAlignment: 'Internal scenario scenario: coordinated internal activity across roles, systems, and evidence sources. ATT&CK: coordinated use of T1078 Valid Accounts, T1213 Data from Information Repositories, and T1567 Exfiltration Over Web Service across multiple accounts.',
+    techniqueAlignment: 'Insider threat: coordinated internal activity across roles, systems, and evidence sources. ATT&CK: coordinated use of T1078 Valid Accounts, T1213 Data from Information Repositories, and T1567 Exfiltration Over Web Service across multiple accounts.',
     description: 'Multiple users coordinate access expansion, data collection, staged transfers, or approval bypass across systems.',
     investigationQuestions: [
       {

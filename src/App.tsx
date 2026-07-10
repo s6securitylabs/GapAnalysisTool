@@ -39,12 +39,12 @@ import {
 import './styles.css';
 
 const primaryViews = [
-  { id: 'Overview', label: 'Overview', hint: 'Assessment summary, metadata, and report framing.' },
+  { id: 'Overview', label: 'Overview', hint: 'Assessment details, current coverage, and top gaps.' },
   { id: 'Scope', label: 'Scope', hint: 'Confirm in-scope domains, handling boundaries, and context.' },
   { id: 'Verify', label: 'Source Readiness', hint: 'Verify critical evidence checks and maturity states.' },
-  { id: 'Scenarios', label: 'Threat Modelling Scenarios', hint: 'Curated scenario-readiness review across threat-scenario flows.' },
+  { id: 'Scenarios', label: 'Attack Scenarios', hint: 'Test investigation coverage against realistic attack paths.' },
   { id: 'Gaps', label: 'Gaps', hint: 'Prioritize remediation owners, dates, and open debt.' },
-  { id: 'Report', label: 'Report', hint: 'Export, save, import, and compare in the report hub.' },
+  { id: 'Report', label: 'Report', hint: 'Export, save, import, and compare assessments.' },
   { id: 'References', label: 'References', hint: 'Use supporting views, definitions, catalogue notes, and handling boundaries.' },
 ] as const;
 type PrimaryView = (typeof primaryViews)[number]['id'];
@@ -59,14 +59,14 @@ type SecondaryView = (typeof secondaryViews)[number]['id'];
 function App() {
   const [activeView, setActiveView] = useState<PrimaryView>('Overview');
   const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk Matrix');
-  const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('demo');
-  const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('demo'));
+  const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('real');
+  const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('real'));
   const [remediationState, setRemediationState] = useState<RemediationState>(() => createInitialRemediationState());
   const [metadata, setMetadata] = useState<AssessmentMetadata>({
-    name: 'FY26 gap analysis readiness review',
+    name: 'FY26 evidence gap assessment',
     owner: 'Security operations',
     notes: '',
-    scope: 'Readiness visualization for confirmed evidence sources and investigative workflows.',
+    scope: 'Evidence available for priority security investigations.',
   });
   const [domainFilter, setDomainFilter] = useState('All domains');
   const [gapsOnly, setGapsOnly] = useState(false);
@@ -120,7 +120,6 @@ function App() {
   );
   const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId);
   const activePrimaryIndex = primaryViews.findIndex((view) => view.id === activeView);
-  const activePrimary = primaryViews[activePrimaryIndex];
   const scenarioStatuses = useMemo(
     () => catalogue.threatScenarios.map((scenario) => ({ scenario, status: getScenarioStatus(scenario, verificationSummary) })),
     [verificationSummary],
@@ -374,33 +373,21 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="header-copy">
-          <div className="eyebrow-row">
-            <p className="eyebrow">Gaps Analysis Tool</p>
-            <span className={`pill ${assessmentMode === 'real' ? 'warning-pill' : 'info-pill'}`}>
-              {assessmentMode === 'real' ? 'Real mode: evidence starts blank' : 'Demo mode: seeded walkthrough'}
-            </span>
-          </div>
-          <h1>Gaps Analysis Tool</h1>
-          <p className="hero-copy">Desktop-first, white-first readiness review for SecOps, investigation, and evidence-readiness workshops.</p>
-          <div className="button-row">
-            <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => setMode('demo')}>
-              Demo mode
-            </button>
-            <button className={assessmentMode === 'real' ? 'active' : ''} onClick={() => setMode('real')}>
-              Real assessment mode
-            </button>
-            <button className="primary-action" onClick={() => setActiveView('Report')}>
-              Open report hub
-            </button>
-          </div>
-        </div>
-        <div className={`hero-score compact-score ${executiveReport.rag}`}>
-          <span>{assessmentMode === 'demo' ? 'Seeded workshop readiness' : 'Current verified readiness'}</span>
-          <strong>{formatPercent(summary.overallScore)}</strong>
-          <small>{`Step ${activePrimaryIndex + 1} of ${primaryViews.length}: ${activePrimary.label}`}</small>
-        </div>
+        <a className="hub-link" href="/" aria-label="Security Engineering Hub">
+          <span className="hub-mark" aria-hidden="true">S6</span>
+          <span>Security Engineering Hub</span>
+        </a>
+        <h1>Gaps Analysis Tool</h1>
+        <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => setMode(assessmentMode === 'demo' ? 'real' : 'demo')}>
+          {assessmentMode === 'demo' ? 'Exit guide' : 'New user guide'}
+        </button>
       </header>
+      {assessmentMode === 'demo' && (
+        <aside className="guide-notice" aria-label="New user guide">
+          <strong>Example data is loaded.</strong>
+          <span>Use it to explore the workflow. Exit the guide before starting a real assessment.</span>
+        </aside>
+      )}
 
       <section className="summary-strip" aria-label="Shared assessment summary">
         <article className="summary-card">
@@ -416,11 +403,11 @@ function App() {
           <small>{verificationStats.acceptedRiskSources} accepted risk</small>
         </article>
         <article className="summary-card">
-          <span className="summary-label">Threat modelling status</span>
+          <span className="summary-label">Priority investigation coverage</span>
           <strong>
             {stoppedScenarioCount}/{catalogue.threatScenarios.length} covered
           </strong>
-          <p>{scenarioStatuses.filter((item) => item.status.status !== 'stopped').length} scenarios still need stronger evidence coverage</p>
+          <p>{scenarioStatuses.filter((item) => item.status.status !== 'stopped').length} investigation paths still need stronger evidence coverage</p>
           <small>{summary.highRiskGapCount} high/critical gaps remain</small>
         </article>
         <article className="summary-card">
@@ -442,12 +429,12 @@ function App() {
       <section className="panel workflow-shell">
         <div className="panel-title-row compact">
           <div>
-            <p className="eyebrow">Primary workflow</p>
-            <h2>Work the assessment in order. Reference views stay off the main path.</h2>
+            <p className="eyebrow">Assessment steps</p>
+            <h2>Define the scope, verify the evidence, then review the gaps.</h2>
           </div>
           <span className="pill info-pill">{`Current step ${activePrimaryIndex + 1}/${primaryViews.length}`}</span>
         </div>
-        <nav aria-label="Primary workflow">
+        <nav aria-label="Assessment steps">
           <ol className="workflow-grid" onKeyDown={handleWorkflowKeyDown}>
             {primaryViews.map((view, index) => {
               const state = index < activePrimaryIndex ? 'complete' : index === activePrimaryIndex ? 'current' : index === activePrimaryIndex + 1 ? 'next' : 'upcoming';
@@ -639,12 +626,12 @@ function OverviewPanel({
         <div className="panel-title-row">
           <div>
             <p className="eyebrow">Overview</p>
-            <h2>Assessment overview for workshop framing, verified readiness, and reporting</h2>
+            <h2>Assessment details and current evidence coverage</h2>
           </div>
           <div className="button-row">
             <button onClick={onOpenScope}>Open scope step</button>
             <button className="primary-action" onClick={onOpenReportHub}>
-              Open report hub
+              Review report
             </button>
           </div>
         </div>
@@ -686,14 +673,14 @@ function OverviewPanel({
           <SummaryList title="" items={report.topGaps} />
         </section>
         <section className="panel">
-          <p className="eyebrow">Threat modelling snapshot</p>
-          <h2>Scenario readiness view</h2>
+          <p className="eyebrow">Attack scenarios</p>
+          <h2>Current scenario coverage</h2>
           <div className="compact-list">
             {scenarioStatuses.slice(0, 5).map(({ scenario, status }) => (
               <div className="list-card" key={scenario.id}>
                 <strong>{scenario.title}</strong>
                 <p>{status.label}</p>
-                <small>{formatPercent(status.readinessScore)} readiness across curated control paths</small>
+                <small>{formatPercent(status.readinessScore)} of required evidence ready</small>
               </div>
             ))}
           </div>
@@ -736,7 +723,7 @@ function ScopePanel(props: {
       <section className="panel">
         <p className="eyebrow">Step 2</p>
         <h2>Confirm assessment scope and evidence-handling boundaries</h2>
-        <p>Keep stakeholder framing in the shell and report, but preserve SecOps and investigation terminology in the working steps.</p>
+        <p>Record what is in scope, who owns the assessment, and who may handle sensitive evidence.</p>
         <div className="compact-list">
           <div className="list-card">
             <strong>Assessment</strong>
@@ -792,7 +779,7 @@ function ScopePanel(props: {
             Open source readiness step
           </button>
           <span className={`pill ${props.assessmentMode === 'real' ? 'warning-pill' : 'info-pill'}`}>
-            {props.assessmentMode === 'real' ? 'Real mode: no bulk verify shortcut' : 'Demo mode: seeded baseline'}
+            {props.assessmentMode === 'real' ? 'Evidence starts blank' : 'Guide data loaded'}
           </span>
         </div>
       </section>
@@ -884,7 +871,7 @@ function VerificationWorkspace({
         </div>
         {assessmentMode === 'real' && (
           <p className="warning-copy">
-            Real assessment mode removes the risky global verify-all shortcut. Set maturity and evidence one source at a time.
+            Verify each source individually. Set its maturity and record the evidence checks you confirmed.
           </p>
         )}
       </div>
@@ -1083,6 +1070,8 @@ function ThreatScenariosPanel({
   sourceById: Map<LogSourceId, LogSource>;
   onOpenGaps?: () => void;
 }) {
+  const [showCoverageDetails, setShowCoverageDetails] = useState(false);
+
   return (
     <section className="stack">
       <ThreatModelPanel sourceById={sourceById} />
@@ -1090,9 +1079,9 @@ function ThreatScenariosPanel({
         <div className="panel">
           <div className="panel-title-row">
             <div>
-              <p className="eyebrow">Threat Modelling Scenarios</p>
-              <h2>Curated scenario-readiness review across threat-scenario flows and investigative control paths</h2>
-              <p className="tight-copy">This step reviews predefined scenario paths and evidence readiness. It does not implement free-form threat-model authoring.</p>
+              <p className="eyebrow">Assessment coverage</p>
+              <h2>Evidence readiness for priority investigations</h2>
+              <p className="tight-copy">These measures use the evidence verified in this assessment.</p>
             </div>
             {onOpenGaps && (
               <button className="primary-action" onClick={onOpenGaps}>
@@ -1121,11 +1110,16 @@ function ThreatScenariosPanel({
           </div>
         </section>
       </div>
-      <div className="scenario-grid">
-        {catalogue.threatScenarios.map((scenario) => (
-          <ScenarioCard key={scenario.id} scenario={scenario} verificationSummary={verificationSummary} sourceById={sourceById} />
-        ))}
-      </div>
+      <button className="disclosure-button" onClick={() => setShowCoverageDetails((visible) => !visible)} aria-expanded={showCoverageDetails}>
+        {showCoverageDetails ? 'Hide investigation coverage details' : 'Show investigation coverage details'}
+      </button>
+      {showCoverageDetails && (
+        <div className="scenario-grid">
+          {catalogue.threatScenarios.map((scenario) => (
+            <ScenarioCard key={scenario.id} scenario={scenario} verificationSummary={verificationSummary} sourceById={sourceById} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -1347,10 +1341,10 @@ function GapAnalysisPanel({
           <div>
             <p className="eyebrow">Gap Analysis</p>
             <h2>Prioritized remediation backlog with owners, dates, and privacy caveats</h2>
-            <p className="tight-copy">Use the report hub for export and snapshot actions, then use the backlog cards below for follow-up planning.</p>
+            <p className="tight-copy">Use the report step for exports and saved assessments. Track follow-up work in the cards below.</p>
           </div>
           <button className="primary-action" onClick={onOpenReportHub}>
-            Open report hub
+            Review report
           </button>
         </div>
         <div className="metric-grid compact-metrics">
@@ -1483,8 +1477,8 @@ function ReportHubPanel({
       <div className="panel">
         <div className="panel-title-row">
           <div>
-            <p className="eyebrow">Report Hub</p>
-            <h2>Export reports, move snapshots, and compare saved assessments</h2>
+            <p className="eyebrow">Report</p>
+            <h2>Export results and compare saved assessments</h2>
           </div>
           <div className="button-row">
             <button className="primary-action" onClick={onExportMarkdown}>

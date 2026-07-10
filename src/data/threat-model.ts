@@ -928,6 +928,7 @@ const cyberSaasTokenTheft: ThreatScenario = {
 interface CuratedStageSpec {
   action: string;
   detail: string;
+  technique?: string;
   sourceId: LogSourceId;
   signal: string;
   evidenceStatus: EvidenceStatus;
@@ -970,7 +971,7 @@ function createCuratedScenario(spec: CuratedScenarioSpec): ThreatScenario {
       return {
         stageId: stage.id,
         actorPresent,
-        action: { summary: item.action, detail: item.detail },
+        action: { summary: item.action, detail: item.detail, technique: item.technique },
         evidence: actorPresent
           ? [{ sourceId: item.sourceId, signal: item.signal, requiredFields: ['actor', 'target', 'timestamp', 'result'], status: item.evidenceStatus }]
           : [],
@@ -1058,9 +1059,104 @@ const detectionPipelineSuppression = createCuratedScenario({
   },
 });
 
+const negligentExternalSharing = createCuratedScenario({
+  id: 'negligent-external-sharing',
+  kind: 'internal',
+  title: 'Accidental external sharing',
+  actor: 'Employee sharing a sensitive document with the wrong external recipient while completing normal work.',
+  objective: 'Confirm what was exposed, who received it, and whether access was revoked without treating a mistake as malicious intent.',
+  summary: 'A non-malicious insider scenario for testing sharing audit, data classification, DLP disposition, privacy-aware triage, and fast revocation.',
+  themes: ['insider-misuse', 'data-exfiltration', 'cloud-saas', 'detection-response'],
+  stages: {
+    preparation: { action: 'Sensitive file is prepared for a legitimate task', detail: 'A project document is ready to share with an approved partner.', sourceId: 'file-access', signal: 'File owner, classification, and approved audience', evidenceStatus: 'partial', gapType: 'telemetry' },
+    access: { action: 'User opens the document from a normal session', detail: 'Identity and device checks pass; there is no account compromise signal.', sourceId: 'idp-auth', signal: 'Authenticated user, device, and application session', evidenceStatus: 'present' },
+    misuse: { action: 'The wrong external address is selected', detail: 'Autocomplete resolves to a similarly named contact outside the approved organisation.', sourceId: 'email', signal: 'Recipient, message, and attachment metadata', evidenceStatus: 'present' },
+    collection: { action: 'Sensitive document is attached', detail: 'The file is attached without changing its classification.', sourceId: 'dlp', signal: 'Sensitive-data match and policy decision', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'Message is delivered externally', detail: 'The recipient opens the attachment before the sender notices the mistake.', sourceId: 'email', signal: 'Delivery, recipient, and message trace', evidenceStatus: 'present' },
+    concealment: { action: 'No concealment is attempted', detail: 'The sender reports the mistake immediately.', sourceId: 'hr-case', signal: 'Self-reported incident timeline', evidenceStatus: 'present', actorPresent: false },
+    response: { action: 'Access is revoked and exposure is scoped', detail: 'The team recalls the message where possible, revokes links, and records the recipient response.', sourceId: 'saas-audit', signal: 'Recall, link revocation, and case closure evidence', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const removableMediaTheft = createCuratedScenario({
+  id: 'removable-media-data-theft',
+  kind: 'internal',
+  title: 'USB data theft',
+  actor: 'Employee with legitimate access copying sensitive files to removable media outside their duties.',
+  objective: 'Tie sensitive file access and USB copy activity to a person, device, and business context.',
+  summary: 'Tests endpoint device control, object-level file audit, classification, copy-volume detection, and evidence preservation for removable-media exfiltration.',
+  themes: ['insider-misuse', 'data-exfiltration', 'detection-response'],
+  stages: {
+    preparation: { action: 'Personal USB device is connected', detail: 'An unapproved removable device is attached to a managed endpoint.', technique: 'T1052.001 Exfiltration Over Physical Medium: Exfiltration over USB', sourceId: 'endpoint-edr', signal: 'USB device identity and connection event', evidenceStatus: 'present' },
+    access: { action: 'User accesses a restricted project folder', detail: 'Valid credentials and standing file permissions are used.', technique: 'T1078 Valid Accounts', sourceId: 'file-access', signal: 'User, file path, classification, and access time', evidenceStatus: 'present' },
+    misuse: { action: 'Access expands beyond normal project work', detail: 'The user reads folders outside their current assignment.', technique: 'T1213 Data from Information Repositories', sourceId: 'file-access', signal: 'Role and peer baseline for sensitive reads', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Files are staged into one folder', detail: 'Sensitive documents are gathered before transfer.', technique: 'T1074 Data Staged', sourceId: 'endpoint-edr', signal: 'File staging and copy sequence', evidenceStatus: 'present' },
+    exfiltration: { action: 'Files are copied to USB', detail: 'The staged folder is written to removable media.', technique: 'T1052.001 Exfiltration Over Physical Medium: Exfiltration over USB', sourceId: 'endpoint-edr', signal: 'Source paths, device ID, bytes, and copy result', evidenceStatus: 'partial', gapType: 'telemetry', severity: 'critical' },
+    concealment: { action: 'Staging folder is deleted', detail: 'Local copies are removed after the USB is disconnected.', technique: 'T1070 Indicator Removal', sourceId: 'endpoint-edr', signal: 'Deletion and process lineage', evidenceStatus: 'present' },
+    response: { action: 'Device and account are contained', detail: 'The endpoint is isolated and the file set is reconstructed from audit data.', sourceId: 'siem-enrichment', signal: 'Case owner, containment time, and evidence export', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const businessRecordFraud = createCuratedScenario({
+  id: 'business-record-fraud',
+  kind: 'internal',
+  title: 'Business record manipulation',
+  actor: 'Employee altering customer, payment, payroll, or expense records for personal gain.',
+  objective: 'Prove which records changed, who approved them, and whether segregation-of-duties controls worked.',
+  summary: 'An insider-fraud scenario covering valid access, approval bypass, stored-data manipulation, audit integrity, and financial-impact scoping.',
+  themes: ['insider-misuse', 'privileged-admin', 'sabotage', 'detection-response'],
+  stages: {
+    preparation: { action: 'Approval weakness is identified', detail: 'The actor learns that low-value changes receive little secondary review.', sourceId: 'saas-audit', signal: 'Approval workflow and role configuration', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Normal business account signs in', detail: 'The user authenticates from a managed device during normal hours.', technique: 'T1078 Valid Accounts', sourceId: 'idp-auth', signal: 'User, device, session, and application', evidenceStatus: 'present' },
+    misuse: { action: 'Payee or account details are changed', detail: 'A legitimate edit function is used outside the user’s authorised purpose.', technique: 'T1565.001 Data Manipulation: Stored Data Manipulation', sourceId: 'saas-audit', signal: 'Before/after values, actor, and target record', evidenceStatus: 'present' },
+    collection: { action: 'High-value records are identified', detail: 'The actor searches for records likely to avoid routine review.', technique: 'T1213 Data from Information Repositories', sourceId: 'saas-audit', signal: 'Search, view, and report history', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'No data-transfer action is required', detail: 'The objective is manipulation inside the business system.', sourceId: 'proxy-dns', signal: 'Outbound transfer evidence', evidenceStatus: 'present', actorPresent: false },
+    concealment: { action: 'Approval notes are edited after payment', detail: 'The actor changes supporting text to make the transaction appear routine.', technique: 'T1565.001 Data Manipulation: Stored Data Manipulation', sourceId: 'saas-audit', signal: 'Immutable change history and deleted notes', evidenceStatus: 'absent', gapType: 'telemetry', severity: 'critical' },
+    response: { action: 'Records and approvals are reconstructed', detail: 'Fraud, finance, HR, and security teams preserve evidence under one case owner.', sourceId: 'hr-case', signal: 'Case approval, evidence access, and recovery record', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const insiderCollusion = createCuratedScenario({
+  id: 'insider-collusion',
+  kind: 'internal',
+  title: 'Cross-user collusion',
+  actor: 'Two employees in different roles coordinating access, approval, collection, and transfer.',
+  objective: 'Reconstruct a multi-user timeline without assuming that each action is suspicious in isolation.',
+  summary: 'Tests identity correlation, segregation of duties, shared-object history, approval evidence, and cross-user detection across normal-looking activity.',
+  themes: ['insider-misuse', 'privileged-admin', 'data-exfiltration', 'detection-response'],
+  stages: {
+    preparation: { action: 'Users agree roles and timing', detail: 'One user can grant access; the other can export data.', sourceId: 'hr-case', signal: 'Role, reporting line, and approved case context', evidenceStatus: 'partial', gapType: 'telemetry' },
+    access: { action: 'Access is granted through a valid workflow', detail: 'A user approves a temporary role for their collaborator.', technique: 'T1098 Account Manipulation', sourceId: 'idp-auth', signal: 'Granting actor, recipient, role, reason, and expiry', evidenceStatus: 'present' },
+    misuse: { action: 'Temporary access is used outside its stated purpose', detail: 'The recipient searches sensitive records unrelated to the approved task.', technique: 'T1078 Valid Accounts', sourceId: 'saas-audit', signal: 'Session, role, object access, and stated purpose', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Records are exported in small batches', detail: 'Both users keep individual actions below volume thresholds.', technique: 'T1213 Data from Information Repositories', sourceId: 'file-access', signal: 'Cross-user object and export timeline', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'One user creates an external share', detail: 'The second user receives the data through a personal cloud account.', technique: 'T1567.002 Exfiltration to Cloud Storage', sourceId: 'cloud-storage', signal: 'Share creator, recipient, object, and destination', evidenceStatus: 'present' },
+    concealment: { action: 'Temporary access is removed', detail: 'The original grant is revoked to make the sequence look complete.', technique: 'T1098 Account Manipulation', sourceId: 'idp-auth', signal: 'Full grant and revocation history', evidenceStatus: 'present' },
+    response: { action: 'Multi-user evidence is preserved', detail: 'The investigation links actions by shared objects, timing, and approvals rather than a single alert.', sourceId: 'siem-enrichment', signal: 'Entity timeline, case owner, and corroboration record', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'investigate' },
+  },
+});
+
+const personalEmailForwarding = createCuratedScenario({
+  id: 'personal-email-forwarding',
+  kind: 'internal',
+  title: 'Mailbox forwarding to a personal account',
+  actor: 'Employee creating a forwarding rule or repeatedly sending sensitive attachments to personal email.',
+  objective: 'Detect and scope mail leaving through forwarding rules, attachments, or delegated mailbox access.',
+  summary: 'Tests mailbox audit, forwarding-rule detection, attachment metadata, DLP coverage, delegated access, and revocation of persistent mail flows.',
+  themes: ['insider-misuse', 'data-exfiltration', 'cloud-saas', 'detection-response'],
+  stages: {
+    preparation: { action: 'Personal mailbox destination is tested', detail: 'A low-sensitivity message is sent externally before larger transfers begin.', technique: 'T1048 Exfiltration Over Alternative Protocol', sourceId: 'email', signal: 'External recipient and message trace', evidenceStatus: 'present' },
+    access: { action: 'Mailbox opens through a normal session', detail: 'The legitimate user signs in from a known device.', technique: 'T1078 Valid Accounts', sourceId: 'idp-auth', signal: 'Mailbox session, user, device, and IP', evidenceStatus: 'present' },
+    misuse: { action: 'External forwarding rule is created', detail: 'Selected messages are silently copied to a personal mailbox.', technique: 'T1114.003 Email Collection: Email Forwarding Rule', sourceId: 'email', signal: 'Rule creator, destination, scope, and creation time', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Sensitive threads and attachments are gathered', detail: 'Messages are searched and labelled before transfer.', technique: 'T1114 Email Collection', sourceId: 'email', signal: 'Search, access, attachment, and message identifiers', evidenceStatus: 'partial', gapType: 'telemetry' },
+    exfiltration: { action: 'Mail is forwarded outside the organisation', detail: 'Messages and attachments are delivered through the forwarding rule.', technique: 'T1567 Exfiltration Over Web Service', sourceId: 'dlp', signal: 'Policy match, destination, attachment, and disposition', evidenceStatus: 'partial', gapType: 'detection', severity: 'critical' },
+    concealment: { action: 'Forwarding rule is hidden among normal rules', detail: 'The rule uses a vague name and narrow conditions.', technique: 'T1114.003 Email Collection: Email Forwarding Rule', sourceId: 'email', signal: 'Rule inventory, changes, and last-used time', evidenceStatus: 'present' },
+    response: { action: 'Rule, sessions, and delegated grants are revoked', detail: 'Containment removes every persistence path and scopes historical delivery.', sourceId: 'email', signal: 'Rule deletion, session revocation, and message trace', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
 export const threatModel: ThreatModel = {
-  version: 'threat-model-0.2.0',
-  note: 'Synthetic threat model for workshop use. Attack chain, evidence, controls, typed gaps, and remediation are modelled together so the 2D map and the 3D simulation always describe the same assessment.',
+  version: 'threat-model-0.3.0',
+  note: 'Synthetic attack scenarios for assessing evidence, controls, gaps, and remediation. The 2D map and 3D view use the same data.',
   safety:
     'Demo data only. Do not enter private logs, tenant identifiers, hostnames, credentials, or unsafe samples into this public tool.',
   stages: attackChainStages,
@@ -1071,6 +1167,11 @@ export const threatModel: ThreatModel = {
     cyberSaasTokenTheft,
     thirdPartyCloudExport,
     breakGlassCredentialMisuse,
+    negligentExternalSharing,
+    removableMediaTheft,
+    businessRecordFraud,
+    insiderCollusion,
+    personalEmailForwarding,
     detectionPipelineSuppression,
   ],
 };

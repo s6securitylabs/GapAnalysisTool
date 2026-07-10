@@ -8,6 +8,8 @@ import {
   threatModel,
   type ControlEffect,
   type GapType,
+  type ScenarioKind,
+  type ThreatScenario,
 } from '../data/threat-model';
 import { buildScenarioOutcome, serializeScenario } from '../lib/threat-model';
 import { AttackChainMap } from './AttackChainMap';
@@ -38,22 +40,33 @@ function downloadJson(filename: string, contents: string) {
 export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, LogSource> }) {
   const [scenarioId, setScenarioId] = useState(threatModel.scenarios[0].id);
   const [mode, setMode] = useState<VisualisationMode>('2d');
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryKind, setLibraryKind] = useState<'all' | ScenarioKind>('all');
+  const [libraryQuery, setLibraryQuery] = useState('');
 
   const scenario = useMemo(
     () => threatModel.scenarios.find((item) => item.id === scenarioId) ?? threatModel.scenarios[0],
     [scenarioId],
   );
   const outcome = useMemo(() => buildScenarioOutcome(scenario), [scenario]);
+  const libraryScenarios = useMemo(() => {
+    const query = libraryQuery.trim().toLowerCase();
+    return threatModel.scenarios.filter((item) => {
+      const matchesKind = libraryKind === 'all' || item.kind === libraryKind;
+      const haystack = `${item.title} ${item.actor} ${item.objective} ${item.summary} ${item.themes.join(' ')} ${scenarioTechniques(item).join(' ')}`.toLowerCase();
+      return matchesKind && (query === '' || haystack.includes(query));
+    });
+  }, [libraryKind, libraryQuery]);
+  const insiderScenarioCount = threatModel.scenarios.filter((item) => item.kind === 'internal').length;
 
   return (
     <section className="panel threat-model-panel">
       <div className="panel-title-row compact">
         <div>
-          <p className="eyebrow">Threat Model</p>
-          <h2>One threat model across the attack chain, drawn two ways</h2>
+          <p className="eyebrow">Attack scenarios</p>
+          <h2>Follow the attack. Check the evidence.</h2>
           <p className="tight-copy">
-            The 2D Attack Chain Map is the authoritative view for review, print, and export. The 3D Threat Simulation renders the
-            same model for exploration and workshop facilitation. {threatModel.safety}
+            Choose a scenario to see the actions, evidence, controls, gaps, and response work at each stage. {threatModel.safety}
           </p>
         </div>
         <div className="mode-switch" role="group" aria-label="Visualisation mode">
@@ -82,8 +95,54 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
           <strong>{scenario.title}</strong>
           <small>{scenario.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</small>
         </div>
-        <span className="pill info-pill">{threatModel.scenarios.length} curated scenarios</span>
+        <span className="pill info-pill">{threatModel.scenarios.length} attack scenarios</span>
+        <button onClick={() => setLibraryOpen((open) => !open)} aria-expanded={libraryOpen}>
+          {libraryOpen ? 'Close scenario library' : 'Browse scenario library'}
+        </button>
       </div>
+
+      {libraryOpen && (
+        <section className="scenario-library" role="region" aria-label="Attack scenario library">
+          <div className="scenario-library-head">
+            <div>
+              <strong>Attack scenario library</strong>
+              <p>{insiderScenarioCount} insider and workforce scenarios · {threatModel.scenarios.length - insiderScenarioCount} external cyber scenarios</p>
+            </div>
+            <div className="library-filters">
+              <input
+                aria-label="Search attack scenarios"
+                value={libraryQuery}
+                onChange={(event) => setLibraryQuery(event.target.value)}
+                placeholder="Search scenarios or techniques"
+              />
+              <select aria-label="Scenario type" value={libraryKind} onChange={(event) => setLibraryKind(event.target.value as 'all' | ScenarioKind)}>
+                <option value="all">All scenarios</option>
+                <option value="internal">Insider and workforce</option>
+                <option value="cyber">External cyber</option>
+              </select>
+            </div>
+          </div>
+          <p className="library-boundary"><strong>Indicative ATT&amp;CK references.</strong> Validate mappings against your environment; non-malicious insider events may have no ATT&amp;CK equivalent.</p>
+          <div className="scenario-library-grid">
+            {libraryScenarios.map((item) => {
+              const techniques = scenarioTechniques(item);
+              return (
+                <button
+                  className={`scenario-library-card ${scenario.id === item.id ? 'active' : ''}`}
+                  key={item.id}
+                  onClick={() => setScenarioId(item.id)}
+                  aria-pressed={scenario.id === item.id}
+                >
+                  <span className={`kind-tag ${item.kind}`}>{item.kind === 'internal' ? 'Insider / workforce' : 'External cyber'}</span>
+                  <strong>{item.title}</strong>
+                  <small>{item.objective}</small>
+                  <span className="technique-list">{techniques.length > 0 ? techniques.join(' · ') : 'No direct ATT&CK mapping'}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="scenario-brief compact-brief">
         <div>
@@ -134,4 +193,8 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
       </details>
     </section>
   );
+}
+
+function scenarioTechniques(scenario: ThreatScenario) {
+  return [...new Set(scenario.stages.map((stage) => stage.action.technique).filter((item): item is string => Boolean(item)))];
 }

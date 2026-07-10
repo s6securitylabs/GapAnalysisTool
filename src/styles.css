@@ -160,19 +160,62 @@ small {
 }
 
 .app-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(240px, 320px);
-  gap: 12px;
-  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.98));
+  border-radius: 14px;
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
-.header-copy {
+.app-header h1 {
+  flex: 1;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.hub-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hub-link:hover {
+  color: var(--accent);
+}
+
+.hub-mark {
   display: grid;
-  gap: 10px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--accent-strong);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.guide-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid #c8ddf3;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--text-muted);
+}
+
+.guide-notice strong {
+  color: var(--accent-strong);
 }
 
 .eyebrow-row {
@@ -1035,7 +1078,6 @@ small {
   }
 
   .app-header {
-    grid-template-columns: 1fr;
     padding: 14px;
   }
 
@@ -1107,8 +1149,29 @@ small {
   }
 
   .app-header {
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
     padding: 12px;
+  }
+
+  .app-header h1 {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .hub-link span:last-child {
+    display: none;
+  }
+
+  .guide-notice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .library-filters,
+  .scenario-library-grid {
+    grid-template-columns: 1fr;
   }
 
   .panel {
@@ -1121,16 +1184,6 @@ small {
 
   .hero-score strong {
     font-size: 1.7rem;
-  }
-
-  .app-header .button-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .app-header .primary-action {
-    grid-column: 1 / -1;
   }
 
   .workflow-shell .panel-title-row {
@@ -1229,7 +1282,7 @@ small {
 .scenario-picker-shell {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1fr) auto;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1fr) auto auto;
   align-items: end;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -1304,6 +1357,72 @@ small {
 .kind-tag.cyber {
   color: var(--info);
   background: var(--info-soft);
+}
+
+.disclosure-button {
+  justify-self: start;
+}
+
+.scenario-library {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--panel-muted);
+}
+
+.scenario-library-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scenario-library-head p,
+.library-boundary {
+  margin: 3px 0 0;
+}
+
+.library-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.55fr);
+  gap: 8px;
+  min-width: min(100%, 470px);
+}
+
+.scenario-library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.scenario-library-card {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 7px;
+  min-height: 150px;
+  padding: 11px;
+  text-align: left;
+}
+
+.scenario-library-card small {
+  color: var(--text-muted);
+}
+
+.technique-list {
+  margin-top: auto;
+  color: var(--accent-strong);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.library-boundary {
+  color: var(--text-soft);
+  font-size: 0.74rem;
 }
 
 .scenario-brief {
@@ -2315,6 +2434,18 @@ small {
     grid-template-columns: 1fr;
   }
 
+  .scenario-library-head {
+    flex-direction: column;
+  }
+
+  .library-filters {
+    width: 100%;
+  }
+
+  .scenario-library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .scenario-actions {
     justify-content: flex-start;
   }
@@ -2324,6 +2455,13 @@ small {
   }
 
   .model-legend li {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .library-filters,
+  .scenario-library-grid {
     grid-template-columns: 1fr;
   }
 }

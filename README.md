@@ -24,7 +24,7 @@ Coverage means that required evidence is both usable and verified. Owning a prod
 
 The 2D attack-chain map is the authoritative review and export view. The 3D simulation is an optional presentation of the same static model and must not introduce independent coverage facts.
 
-The UI presents one ordered workflow: Overview, Scope, Source Readiness, Threat Modelling Scenarios, Gaps, Report, then References. The final References step contains the risk matrix, glossary, catalogue notes, and handling boundaries so supporting material does not interrupt every working page. Curated attack-chain scenarios cover internal misuse, privileged administration, data movement, third-party access, credential misuse, cloud audit readiness, sabotage, ransomware staging, and detection/response engineering.
+The UI presents one ordered workflow: Overview, Scope, Source Readiness, Attack Scenarios, Gaps, Report, then References. A new assessment starts with blank evidence. The optional **New user guide** loads example data for exploration. The attack-scenario library contains 12 scenarios: nine insider/workforce scenarios and three external cyber scenarios. Scenario detail includes indicative MITRE ATT&CK references where they fit; accidental and other non-adversarial events are not forced into ATT&CK mappings.
 
 Each log source explains why the evidence is wanted, the positive investigation or SOC-engineering impact it can create, and the negative impact or caveat that should constrain collection. This keeps analyst value, privacy, cost, and false-confidence tradeoffs visible in the same place as readiness scoring.
 

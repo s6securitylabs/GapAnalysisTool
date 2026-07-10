@@ -16,7 +16,8 @@ describe('canonical threat model', () => {
     expect(kinds).toEqual(new Set(['internal', 'cyber']));
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal').length).toBeGreaterThan(0);
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'cyber').length).toBeGreaterThan(0);
-    expect(threatModel.scenarios.length).toBeGreaterThanOrEqual(7);
+    expect(threatModel.scenarios).toHaveLength(12);
+    expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal')).toHaveLength(9);
   });
 
   it('covers the required insider, third-party, cloud, ransomware, and engineering themes', () => {

@@ -17,10 +17,12 @@ Follow the numbered UI progression from left to right:
 1. **Overview:** name the assessment, assign its owner, and review the current readiness summary.
 2. **Scope:** confirm handling constraints, in-scope evidence domains, and exclusions.
 3. **Source Readiness:** verify each evidence source. Record maturity separately from individual critical checks; collection alone does not establish readiness. For every source, review why the log is wanted, what positive investigation or SOC-engineering impact it provides, and what negative impact, privacy/cost caveat, or false-confidence risk it introduces.
-4. **Threat Modelling Scenarios:** review the directional 2D attack chain and its detailed lanes to understand where evidence or control behaviour changes the outcome. The 3D view is optional.
-5. **Gaps:** work the prioritized register. Replace seeded guidance with actual owners, dates, use-case mappings, validation methods, and evidence references.
+4. **Attack Scenarios:** choose from the compact scenario library, then review the directional 2D attack chain to see where evidence or control behaviour changes the outcome. Filter for insider/workforce or external cyber scenarios and use the indicative MITRE ATT&CK references as a starting point, not a compliance claim. The 3D view is optional.
+5. **Gaps:** work the prioritized register. Replace guide data with actual owners, dates, use-case mappings, validation methods, and evidence references.
 6. **Report:** export a Markdown summary and CSV engineering register. Save or export a JSON snapshot when a point-in-time baseline is needed, then compare after reassessment.
 7. **References:** consult the risk matrix, glossary, catalogue notes, trust boundary, and handling caveats after the working assessment.
+
+New assessments start with blank evidence. Select **New user guide** only when you want example data for learning the workflow; exit the guide before recording a real assessment.
 
 ## Remediation lifecycle
 
