@@ -952,7 +952,7 @@ function VerificationWorkspace({
           );
           const metadata = sourceMetadata[source.id];
           const remediation = remediationState[source.id];
-          const isSensitive = ['email', 'hr-case', 'physical-access'].includes(source.id);
+          const isSensitive = ['email', 'workforce-lifecycle', 'identity-governance', 'asset-custody', 'case-management', 'physical-access'].includes(source.id);
           const progressPercent = sourceProgressPercent(verification);
           const sourceStatus = describeSourceStatus(verification);
 

@@ -47,7 +47,7 @@ describe('snapshot helpers', () => {
     expect(parsed.catalogueVersion).toBe(catalogue.version);
   });
 
-  it('migrates v0.3 workforce check IDs without dropping verified evidence', () => {
+  it('migrates legacy hr-case evidence onto the four governed workforce sources', () => {
     const migrated = migrateSnapshot({
       id: 'legacy-workforce',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -57,7 +57,13 @@ describe('snapshot helpers', () => {
       sourceState: {
         'hr-case': {
           maturity: 'investigation-ready',
-          verifiedCheckIds: ['hr-status-dates', 'hr-role-context', 'legacy-unknown-check'],
+          verifiedCheckIds: [
+            'hr-status-dates',
+            'hr-role-context',
+            'hr-transition-controls',
+            'hr-access-controls',
+            'legacy-unknown-check',
+          ],
           evidenceReference: 'Case file 12',
           validatedBy: 'Investigator',
           validatedAt: '2026-01-01',
@@ -66,13 +72,19 @@ describe('snapshot helpers', () => {
       remediationState: {} as never,
     });
 
-    expect(migrated.sourceState['hr-case'].verifiedCheckIds).toEqual(
+    expect(Object.keys(migrated.sourceState)).not.toContain('hr-case');
+    expect(migrated.sourceState['workforce-lifecycle'].verifiedCheckIds).toEqual(
       expect.arrayContaining(['hr-lifecycle-dates', 'hr-role-context']),
     );
-    expect(migrated.sourceState['hr-case'].verifiedCheckIds).not.toContain('hr-status-dates');
-    expect(migrated.sourceState['hr-case'].verifiedCheckIds).not.toContain('legacy-unknown-check');
+    expect(migrated.sourceState['workforce-lifecycle'].verifiedCheckIds).not.toContain('hr-status-dates');
+    expect(migrated.sourceState['identity-governance'].verifiedCheckIds).toContain('ig-transition-tasks');
+    expect(migrated.sourceState['case-management'].verifiedCheckIds).toContain('hr-access-controls');
+    expect(migrated.sourceState['asset-custody'].maturity).toBe('investigation-ready');
+    expect(migrated.sourceState['workforce-lifecycle'].evidenceReference).toBe('Case file 12');
     expect(migrated.migrationNotes?.join(' ')).toMatch(/hr-status-dates → hr-lifecycle-dates/);
+    expect(migrated.migrationNotes?.join(' ')).toMatch(/hr-transition-controls → ig-transition-tasks/);
     expect(migrated.migrationNotes?.join(' ')).toMatch(/legacy-unknown-check/);
+    expect(migrated.migrationNotes?.join(' ')).toMatch(/split into workforce-lifecycle/);
     expect(migrated.migrationNotes?.join(' ')).toMatch(/still need verification/);
     expect(migrated.catalogueVersion).toBe(catalogue.version);
   });

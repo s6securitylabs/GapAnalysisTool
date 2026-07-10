@@ -4,6 +4,17 @@ import type { RemediationState } from './remediation';
 import { getScenarioStatus, type AssessmentMetadata, type AssessmentMode, type SourceVerificationSummary } from './assessment';
 import { formatPercent, type CoverageSummary } from './coverage';
 
+export interface AcceptedRiskDetail {
+  sourceId: LogSourceId;
+  name: string;
+  rationale: string;
+  reviewDate: string;
+  gapOwner: string;
+  businessOwner: string;
+  engineeringOwner: string;
+  status: string;
+}
+
 export interface ExecutiveReport {
   rag: 'green' | 'amber' | 'red';
   plainEnglishSummary: string;
@@ -12,6 +23,9 @@ export interface ExecutiveReport {
   topGaps: string[];
   recommendedInvestments: string[];
   scenarioSummary: string[];
+  methodology: string[];
+  governance: string[];
+  acceptedRiskDetails: AcceptedRiskDetail[];
   markdown: string;
 }
 
@@ -81,6 +95,44 @@ export function buildExecutiveReport(params: {
   });
   const plainEnglishSummary = `Overall readiness is ${rag.toUpperCase()} at ${formatPercent(summary.overallScore)}. ${summary.highRiskGapCount} high or critical gaps remain. ${readySources.length} sources currently satisfy investigation-ready gating (all critical checks verified).`;
 
+  const methodology = [
+    'Investigation-ready means critical evidence checks are verified and searchable — not that a control blocked or contained the path.',
+    'Preventive block/contain outcomes live in the threat-model control view; they are not inferred from evidence readiness scores.',
+    'Source readiness combines maturity weight with verified critical checks; accepted-risk sources score zero for coverage.',
+    'Scenario readiness requires critical evidence sources for that scenario to be investigation-ready; partial sources do not invent coverage.',
+    'RAG thresholds: GREEN ≥ 80%, AMBER 55–79%, RED < 55% of severity-weighted evidence readiness across risk vectors.',
+  ];
+
+  const governance = [
+    'Purpose limitation: collect and review only fields needed for a named investigative purpose.',
+    'Least privilege: sensitive workforce, case, email, and physical sources require approved access and audit.',
+    'Human review: contextual signals trigger multidisciplinary review; they do not automate employee risk scores.',
+    'No intent inference from single signals: corroborate technical evidence before action.',
+    'Privacy-sensitive sources (email, workforce lifecycle, identity governance, asset custody, case management, physical access) need counsel-approved handling notes.',
+  ];
+
+  const acceptedRiskDetails: AcceptedRiskDetail[] = acceptedRiskSources.map((source) => {
+    const plan = remediationFor(source.id);
+    return {
+      sourceId: source.id,
+      name: source.name,
+      rationale: plan.acceptedRiskRationale?.trim() || 'No accepted-risk rationale recorded.',
+      reviewDate: plan.riskReviewDate?.trim() || 'No review date set.',
+      gapOwner: plan.gapOwner?.trim() || 'Unassigned',
+      businessOwner: plan.businessOwner?.trim() || 'Unassigned',
+      engineeringOwner: plan.engineeringOwner?.trim() || 'Unassigned',
+      status: plan.status,
+    };
+  });
+
+  const acceptedRiskMarkdown =
+    acceptedRiskDetails.length > 0
+      ? acceptedRiskDetails.map(
+          (item) =>
+            `- ${item.name}: rationale — ${item.rationale}; review — ${item.reviewDate}; owners — gap ${item.gapOwner}, business ${item.businessOwner}, engineering ${item.engineeringOwner}.`,
+        )
+      : ['- No sources are currently flagged as accepted-risk.'];
+
   const markdown = [
     `# Gaps Analysis Tool Report Summary`,
     ``,
@@ -97,6 +149,12 @@ export function buildExecutiveReport(params: {
     ``,
     `## Plain-English Summary`,
     plainEnglishSummary,
+    ``,
+    `## Methodology`,
+    ...methodology.map((item) => `- ${item}`),
+    ``,
+    `## Governance`,
+    ...governance.map((item) => `- ${item}`),
     ``,
     `## Strengths`,
     ...strengths.map((item) => `- ${item}`),
@@ -117,12 +175,16 @@ export function buildExecutiveReport(params: {
       return `- ${source?.name ?? item.sourceId}: ${plan.status}; priority ${plan.priority}; SLA ${plan.slaDays} days; business owner ${plan.businessOwner}; detection/use case ${plan.detectionUseCase}; validation ${plan.validationMethod}; evidence ${plan.evidenceReference || 'not yet recorded'}.`;
     }),
     ``,
+    `## Accepted-risk detail`,
+    ...acceptedRiskMarkdown,
+    ``,
     `## Scenario Snapshot`,
     ...scenarioSummary.map((item) => `- ${item}`),
     ``,
     `## Guardrails`,
     `- This product does not ingest raw logs; it visualizes readiness based on verified evidence from other systems.`,
     `- HR, physical, email, and behavioral context require minimum-necessary access, counsel-approved purpose limitation, and corroboration.`,
+    `- Evidence readiness is not prevention: blocking would stop the path; containment would limit impact after detection.`,
   ].join('\n');
 
   return {
@@ -133,6 +195,9 @@ export function buildExecutiveReport(params: {
     topGaps,
     recommendedInvestments,
     scenarioSummary,
+    methodology,
+    governance,
+    acceptedRiskDetails,
     markdown,
   };
 }

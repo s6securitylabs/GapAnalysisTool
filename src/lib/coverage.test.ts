@@ -41,7 +41,7 @@ describe('coverage scoring', () => {
 
     expect(scored.status).toBe('partial');
     expect(scored.riskGapScore).toBeGreaterThan(0);
-    expect(scored.missingSources).toContain('hr-case');
+    expect(scored.missingSources).toContain('workforce-lifecycle');
     expect(scored.availableSources).toContain('idp-auth');
   });
 
@@ -79,11 +79,11 @@ describe('coverage scoring', () => {
     );
     expect(csv).toContain('Quarterly review');
     expect(csv).toContain('IdP authentication');
-    expect(csv).toContain('Workforce lifecycle / case context');
+    expect(csv).toContain('Workforce lifecycle');
     expect(csv).toContain('purpose limitation');
     expect(csv).toContain('gap_owners');
     expect(csv).toContain('detection_use_cases');
     expect(csv).toContain('validation_methods');
-    expect(csv).toContain('critical: Workforce lifecycle / case context');
+    expect(csv).toContain('critical: Workforce lifecycle');
   });
 });

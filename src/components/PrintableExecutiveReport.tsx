@@ -171,6 +171,59 @@ export function PrintableExecutiveReport({
 
         <section className="report-section report-page-break-before">
           <div className="report-section-heading">
+            <div><p className="report-kicker">Method and guardrails</p><h2>How readiness is scored and governed</h2></div>
+            <p>Readiness measures investigation evidence, not preventive block or contain outcomes.</p>
+          </div>
+          <div className="report-two-column">
+            <section className="report-card report-method-card">
+              <h3>Methodology</h3>
+              <p className="report-one-liner">Investigation-ready ≠ blocked or contained.</p>
+              <ul>{report.methodology.map((item) => <li key={item}>{item}</li>)}</ul>
+            </section>
+            <section className="report-card report-method-card">
+              <h3>Governance</h3>
+              <p className="report-one-liner">Purpose-limited, human-reviewed, no single-signal intent.</p>
+              <ul>{report.governance.map((item) => <li key={item}>{item}</li>)}</ul>
+            </section>
+          </div>
+          <section className="report-card report-table-card">
+            <div className="report-card-heading">
+              <h3>Accepted-risk detail</h3>
+              <span>{report.acceptedRiskDetails.length} sources</span>
+            </div>
+            {report.acceptedRiskDetails.length === 0 ? (
+              <p className="report-empty-note">No sources are currently flagged as accepted-risk.</p>
+            ) : (
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Rationale</th>
+                    <th>Review date</th>
+                    <th>Owners</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.acceptedRiskDetails.map((item) => (
+                    <tr key={item.sourceId}>
+                      <td><strong>{item.name}</strong><small>{item.status}</small></td>
+                      <td>{item.rationale}</td>
+                      <td>{item.reviewDate}</td>
+                      <td>
+                        <small>Gap: {item.gapOwner}</small>
+                        <small>Business: {item.businessOwner}</small>
+                        <small>Engineering: {item.engineeringOwner}</small>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        </section>
+
+        <section className="report-section report-page-break-before">
+          <div className="report-section-heading">
             <div><p className="report-kicker">Action plan</p><h2>Priority evidence improvements</h2></div>
             <p>Actions are ranked by the number and severity of investigation paths they improve. Recommendations remain catalogue guidance until owners and delivery dates are recorded.</p>
           </div>

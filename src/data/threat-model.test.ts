@@ -155,4 +155,14 @@ describe('canonical threat model', () => {
     expect(threatModel.safety).toMatch(/Demo data only/i);
     expect(threatModel.safety).toMatch(/tenant identifiers/i);
   });
+
+  it('avoids generic readiness-control labels on curated stages', () => {
+    for (const scenario of threatModel.scenarios) {
+      for (const stage of scenario.stages) {
+        for (const control of stage.controls) {
+          expect(control.name).not.toMatch(/readiness control$/i);
+        }
+      }
+    }
+  });
 });

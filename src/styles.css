@@ -3174,6 +3174,10 @@ small {
 .report-findings { margin-top: 14px; }
 .report-findings ul { margin: 0; padding-left: 18px; }
 .report-findings li { margin-bottom: 8px; line-height: 1.45; }
+.report-method-card ul { margin: 10px 0 0; padding-left: 18px; }
+.report-method-card li { margin-bottom: 8px; line-height: 1.45; color: #4f6478; font-size: 0.82rem; }
+.report-one-liner { margin: 0; color: #1f4b73; font-size: 0.8rem; font-weight: 700; }
+.report-empty-note { margin: 0; color: #667b90; line-height: 1.45; }
 
 .priority-action-list { display: grid; gap: 10px; }
 .priority-action { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(220px, 0.45fr); gap: 18px; align-items: start; padding: 18px; border: 1px solid #d9e1e9; border-radius: 12px; background: #fbfcfe; }

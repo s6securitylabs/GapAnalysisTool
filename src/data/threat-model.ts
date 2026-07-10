@@ -355,7 +355,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
         detail: 'HR records a resignation with a four-week notice period. No security review is triggered and entitlements stay as they were.',
       },
       evidence: [
-        { sourceId: 'hr-case', signal: 'Resignation date and notice window', requiredFields: ['user', 'status', 'effectiveDate', 'manager'], status: 'present' },
+        { sourceId: 'workforce-lifecycle', signal: 'Resignation date and notice window', requiredFields: ['user', 'status', 'effectiveDate', 'manager'], status: 'present' },
         { sourceId: 'siem-enrichment', signal: 'Approved workforce transition-window enrichment on the user entity', requiredFields: ['user', 'transitionType', 'effectiveFrom', 'effectiveTo', 'approvalId'], status: 'absent' },
       ],
       controls: [
@@ -506,7 +506,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
       },
       evidence: [
         { sourceId: 'saas-audit', signal: 'Ninety-day retained export history', requiredFields: ['user', 'action', 'objectId', 'timestamp'], status: 'present' },
-        { sourceId: 'hr-case', signal: 'Case notes, approvals, and investigator access audit', requiredFields: ['caseId', 'approver', 'accessAudit'], status: 'present' },
+        { sourceId: 'case-management', signal: 'Case notes, approvals, and investigator access audit', requiredFields: ['caseId', 'approver', 'accessAudit'], status: 'present' },
       ],
       controls: [
         { id: 'ins-exf-c-case', name: 'Internal scenario case workflow', effect: 'investigate', outcome: 'holds', confidence: 'high', note: 'Evidence can be exported with chain-of-custody notes.' },
@@ -1090,6 +1090,15 @@ interface CuratedStageSpec {
   controlEffect?: ControlEffect;
   controlOutcome?: ControlOutcome;
   actorPresent?: boolean;
+  /** Scenario-specific control title. Prefer an explicit name over factory defaults. */
+  controlName?: string;
+  controlNote?: string;
+  gapStatement?: string;
+  gapConsequence?: string;
+  remediationAction?: string;
+  remediationOwner?: string;
+  remediationEffort?: 'low' | 'medium' | 'high';
+  requiredFields?: string[];
 }
 
 interface CuratedScenarioSpec extends Omit<ThreatScenario, 'stages'> {
@@ -1100,6 +1109,9 @@ interface CuratedScenarioSpec extends Omit<ThreatScenario, 'stages'> {
  * Keeps additional workshop scenarios concise without weakening the canonical model: every
  * generated scenario still carries all seven stages, explicit evidence health, a named
  * control outcome, typed gaps, and linked remediation.
+ *
+ * Prefer scenario-specific controlName / gapStatement / remediationAction on each stage.
+ * Defaults derive from action, signal, and stage intent rather than generic stage labels.
  */
 function createCuratedScenario(spec: CuratedScenarioSpec): ThreatScenario {
   return {
@@ -1108,34 +1120,43 @@ function createCuratedScenario(spec: CuratedScenarioSpec): ThreatScenario {
       const item = spec.stages[stage.id];
       const actorPresent = item.actorPresent ?? true;
       const gapId = `${spec.id}-${stage.id}-gap`;
+      const controlEffect = item.controlEffect ?? (stage.id === 'response' ? 'contain' : 'detect');
       const gap = item.gapType
         ? {
             id: gapId,
             type: item.gapType,
             severity: item.severity ?? 'high',
             confidence: 'high' as const,
-            statement: `${item.signal} is not sufficiently ready for this stage.`,
-            consequence: `The ${stage.label.toLowerCase()} activity may not be detected, explained, or contained with defensible evidence.`,
+            statement:
+              item.gapStatement ??
+              `${item.signal} cannot reliably support "${item.action}" at the ${stage.label.toLowerCase()} stage.`,
+            consequence:
+              item.gapConsequence ??
+              `Without usable ${item.signal.toLowerCase()}, the ${stage.label.toLowerCase()} activity may not be detected, explained, or contained with defensible evidence.`,
           }
         : null;
-      const controlEffect = item.controlEffect ?? (stage.id === 'response' ? 'contain' : 'detect');
       const controlOutcome = item.controlOutcome ?? (gap ? 'partial' : 'holds');
+      const requiredFields = item.requiredFields ?? ['actor', 'target', 'timestamp', 'result'];
 
       return {
         stageId: stage.id,
         actorPresent,
         action: { summary: item.action, detail: item.detail, technique: item.technique },
         evidence: actorPresent
-          ? [{ sourceId: item.sourceId, signal: item.signal, requiredFields: ['actor', 'target', 'timestamp', 'result'], status: item.evidenceStatus }]
+          ? [{ sourceId: item.sourceId, signal: item.signal, requiredFields, status: item.evidenceStatus }]
           : [],
         controls: actorPresent
           ? [{
               id: `${spec.id}-${stage.id}-control`,
-              name: `${stage.label} readiness control`,
+              name: item.controlName ?? `${item.signal} ${controlEffect} control`,
               effect: controlEffect,
               outcome: controlOutcome,
               confidence: item.evidenceStatus === 'present' ? 'high' : 'medium',
-              note: gap ? 'The control exists but its evidence or operating path is incomplete.' : 'The control has usable evidence and a defined operating path.',
+              note:
+                item.controlNote ??
+                (gap
+                  ? `${item.signal} exists but is incomplete for "${item.action}".`
+                  : `${item.signal} provides a usable operating path for "${item.action}".`),
             }]
           : [],
         gaps: gap ? [gap] : [],
@@ -1143,10 +1164,14 @@ function createCuratedScenario(spec: CuratedScenarioSpec): ThreatScenario {
           gap && gap.type !== 'accepted-risk'
             ? [{
                 id: `${spec.id}-${stage.id}-remediation`,
-                action: `Close the ${gap.type} gap for ${item.signal.toLowerCase()} and validate the result in a scenario exercise.`,
-                owner: gap.type === 'response' ? 'Incident response' : 'Detection engineering',
+                action:
+                  item.remediationAction ??
+                  `Strengthen ${item.signal.toLowerCase()} so "${item.action}" can be detected, explained, and contained, then validate in a scenario exercise.`,
+                owner:
+                  item.remediationOwner ??
+                  (gap.type === 'response' ? 'Incident response' : 'Detection engineering'),
                 targetDate: '2026-12-15',
-                effort: 'medium',
+                effort: item.remediationEffort ?? 'medium',
                 gapIds: [gapId],
               }]
             : [],
@@ -1165,7 +1190,7 @@ const thirdPartyCloudExport = createCuratedScenario({
   story: scenarioStories['third-party-cloud-export'],
   themes: ['third-party', 'credential-misuse', 'cloud-saas', 'data-exfiltration', 'detection-response'],
   stages: {
-    preparation: { action: 'Engagement ends without an access trigger', detail: 'The supplier record closes, but no identity workflow receives the effective end date.', sourceId: 'hr-case', signal: 'Third-party end date and sponsor', evidenceStatus: 'absent', gapType: 'telemetry' },
+    preparation: { action: 'Engagement ends without an access trigger', detail: 'The supplier record closes, but no identity workflow receives the effective end date.', sourceId: 'workforce-lifecycle', signal: 'Third-party end date and sponsor', evidenceStatus: 'absent', gapType: 'telemetry' },
     access: { action: 'Federated account starts a new session', detail: 'The external identity still satisfies the application access policy.', technique: 'T1078 Valid Accounts', sourceId: 'idp-auth', signal: 'Federated sign-in, sponsor, and device context', evidenceStatus: 'present' },
     misuse: { action: 'Project permissions are used outside the agreed window', detail: 'Valid workspace access is used after the approved delivery period.', sourceId: 'saas-audit', signal: 'Workspace role and object access', evidenceStatus: 'partial', gapType: 'detection' },
     collection: { action: 'Workspace records are exported in bulk', detail: 'The actor uses a native bulk export that resembles ordinary project closeout.', technique: 'T1213 Data from Information Repositories', sourceId: 'saas-audit', signal: 'Bulk export with object and byte counts', evidenceStatus: 'present' },
@@ -1230,7 +1255,7 @@ const negligentExternalSharing = createCuratedScenario({
     misuse: { action: 'The wrong external address is selected', detail: 'Autocomplete resolves to a similarly named contact outside the approved organisation.', sourceId: 'email', signal: 'Recipient, message, and attachment metadata', evidenceStatus: 'present' },
     collection: { action: 'Sensitive document is attached', detail: 'The file is attached without changing its classification.', sourceId: 'dlp', signal: 'Sensitive-data match and policy decision', evidenceStatus: 'partial', gapType: 'detection' },
     exfiltration: { action: 'Message is delivered externally', detail: 'The recipient opens the attachment before the sender notices the mistake.', sourceId: 'email', signal: 'Delivery, recipient, and message trace', evidenceStatus: 'present' },
-    concealment: { action: 'No concealment is attempted', detail: 'The sender reports the mistake immediately.', sourceId: 'hr-case', signal: 'Self-reported incident timeline', evidenceStatus: 'present', actorPresent: false },
+    concealment: { action: 'No concealment is attempted', detail: 'The sender reports the mistake immediately.', sourceId: 'case-management', signal: 'Self-reported incident timeline', evidenceStatus: 'present', actorPresent: false },
     response: { action: 'Access is revoked and exposure is scoped', detail: 'The team recalls the message where possible, revokes links, and records the recipient response.', sourceId: 'saas-audit', signal: 'Recall, link revocation, and case closure evidence', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
   },
 });
@@ -1271,7 +1296,7 @@ const businessRecordFraud = createCuratedScenario({
     collection: { action: 'High-value records are identified', detail: 'The actor searches for records likely to avoid routine review.', technique: 'T1213 Data from Information Repositories', sourceId: 'saas-audit', signal: 'Search, view, and report history', evidenceStatus: 'partial', gapType: 'detection' },
     exfiltration: { action: 'No data-transfer action is required', detail: 'The objective is manipulation inside the business system.', sourceId: 'proxy-dns', signal: 'Outbound transfer evidence', evidenceStatus: 'present', actorPresent: false },
     concealment: { action: 'Approval notes are edited after payment', detail: 'The actor changes supporting text to make the transaction appear routine.', technique: 'T1565.001 Data Manipulation: Stored Data Manipulation', sourceId: 'saas-audit', signal: 'Immutable change history and deleted notes', evidenceStatus: 'absent', gapType: 'telemetry', severity: 'critical' },
-    response: { action: 'Records and approvals are reconstructed', detail: 'Fraud, finance, HR, and security teams preserve evidence under one case owner.', sourceId: 'hr-case', signal: 'Case approval, evidence access, and recovery record', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+    response: { action: 'Records and approvals are reconstructed', detail: 'Fraud, finance, HR, and security teams preserve evidence under one case owner.', sourceId: 'case-management', signal: 'Case approval, evidence access, and recovery record', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
   },
 });
 
@@ -1285,7 +1310,7 @@ const insiderCollusion = createCuratedScenario({
   story: scenarioStories['insider-collusion'],
   themes: ['insider-misuse', 'privileged-admin', 'data-exfiltration', 'detection-response'],
   stages: {
-    preparation: { action: 'Users agree roles and timing', detail: 'One user can grant access; the other can export data.', sourceId: 'hr-case', signal: 'Role, reporting line, and approved case context', evidenceStatus: 'partial', gapType: 'telemetry' },
+    preparation: { action: 'Users agree roles and timing', detail: 'One user can grant access; the other can export data.', sourceId: 'workforce-lifecycle', signal: 'Role, reporting line, and approved case context', evidenceStatus: 'partial', gapType: 'telemetry' },
     access: { action: 'Access is granted through a valid workflow', detail: 'A user approves a temporary role for their collaborator.', technique: 'T1098 Account Manipulation', sourceId: 'idp-auth', signal: 'Granting actor, recipient, role, reason, and expiry', evidenceStatus: 'present' },
     misuse: { action: 'Temporary access is used outside its stated purpose', detail: 'The recipient searches sensitive records unrelated to the approved task.', technique: 'T1078 Valid Accounts', sourceId: 'saas-audit', signal: 'Session, role, object access, and stated purpose', evidenceStatus: 'partial', gapType: 'detection' },
     collection: { action: 'Records are exported in small batches', detail: 'Both users keep individual actions below volume thresholds.', technique: 'T1213 Data from Information Repositories', sourceId: 'file-access', signal: 'Cross-user object and export timeline', evidenceStatus: 'partial', gapType: 'detection' },
@@ -1466,7 +1491,7 @@ const availabilityExtortion = createCuratedScenario({
 });
 
 export const threatModel: ThreatModel = {
-  version: 'threat-model-0.4.0',
+  version: 'threat-model-0.5.0',
   note: 'Synthetic attack scenarios for assessing evidence, controls, gaps, and remediation. The 2D map and 3D view use the same data.',
   safety:
     'Demo data only. Do not enter private logs, tenant identifiers, hostnames, credentials, or unsafe samples into this public tool.',

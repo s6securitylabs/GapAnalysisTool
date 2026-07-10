@@ -165,6 +165,24 @@ export const glossary: GlossaryTerm[] = [
     whyItMatters: 'Strong least-privilege controls would prevent unnecessary access and reduce the impact of misuse or compromise.',
   },
   {
+    term: 'Access review',
+    category: 'Controls and identity',
+    plainEnglish: 'A scheduled or event-driven check that residual entitlements still match current duties, with a recorded decision and owner.',
+    whyItMatters: 'Completed access reviews prove least privilege was reassessed; overdue reviews are control failures, not proof of misconduct.',
+  },
+  {
+    term: 'Chain of custody',
+    category: 'Evidence readiness',
+    plainEnglish: 'A defensible record of who held, transferred, recovered, or disposed of an asset or evidence item and when.',
+    whyItMatters: 'Without custody history, device return gaps and investigation evidence cannot be attributed or trusted.',
+  },
+  {
+    term: 'Device return',
+    category: 'Evidence readiness',
+    plainEnglish: 'Evidence that assigned laptops, phones, tokens, or media were returned, wiped, or otherwise accounted for after a transition.',
+    whyItMatters: 'Unreturned devices can leave data and credentials reachable after identity access should have ended.',
+  },
+  {
     term: 'Segregation of duties',
     category: 'Controls and identity',
     plainEnglish: 'Splitting a sensitive task so one person cannot both perform and approve it.',

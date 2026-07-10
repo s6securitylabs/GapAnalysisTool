@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { catalogue, logSources, riskVectors } from './catalogue';
+import { threatModel } from './threat-model';
+import { assessmentScenarioCoverageComplete } from '../lib/assessment-scenarios';
 
 describe('threat-scenario catalogue data', () => {
   it('exposes non-empty sources and risk vectors', () => {
-    expect(catalogue.version).toBe('0.4.0');
+    expect(catalogue.version).toBe('0.5.0');
     expect(logSources.length).toBeGreaterThan(0);
     expect(riskVectors.length).toBeGreaterThan(0);
   });
@@ -38,23 +40,34 @@ describe('threat-scenario catalogue data', () => {
 
     expect(logSources.find((source) => source.id === 'email')?.verificationChecks.some((check) => check.id === 'email-login-logout')).toBe(true);
     expect(catalogue.threatFlow.length).toBeGreaterThan(3);
-    expect(catalogue.threatScenarios.length).toBeGreaterThan(3);
+    expect(catalogue.threatScenarios.length).toBe(threatModel.scenarios.length);
+    expect(catalogue.threatScenarios.length).toBe(17);
   });
 
   it('models workforce indicators as governed context rather than employee scoring', () => {
-    const workforce = logSources.find((source) => source.id === 'hr-case');
+    const workforce = logSources.find((source) => source.id === 'workforce-lifecycle');
     expect(workforce?.name).toMatch(/Workforce lifecycle/i);
     expect(workforce?.verificationChecks.map((check) => check.id)).toEqual(expect.arrayContaining([
       'hr-lifecycle-dates',
       'hr-role-context',
-      'hr-transition-controls',
-      'hr-referral-governance',
-      'hr-access-controls',
     ]));
     expect(workforce?.collectionNotes).toMatch(/human review/i);
     expect(workforce?.collectionNotes).toMatch(/Exclude medical details/i);
     expect(riskVectors.find((vector) => vector.id === 'workforce-transition-control-failure')?.techniqueAlignment).toMatch(/not.*proof/i);
     expect(catalogue.note).toMatch(/not prediction or standalone proof/i);
+  });
+
+  it('unifies assessment scenarios with the threat-model library', () => {
+    const modelIds = threatModel.scenarios.map((scenario) => scenario.id);
+    const assessmentIds = catalogue.threatScenarios.map((scenario) => scenario.id);
+    expect(assessmentIds).toEqual(modelIds);
+    for (const scenario of catalogue.threatScenarios) {
+      const model = threatModel.scenarios.find((item) => item.id === scenario.id);
+      expect(model?.title).toBe(scenario.title);
+      expect(scenario.vectorIds.length).toBeGreaterThan(0);
+      expect(scenario.criticalSources.length).toBeGreaterThan(0);
+    }
+    expect(assessmentScenarioCoverageComplete()).toBe(true);
   });
 
   it('references only defined vector and source IDs from scenarios, with no orphaned vectors', () => {

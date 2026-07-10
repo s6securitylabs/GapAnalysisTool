@@ -206,7 +206,7 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('heading', { name: /Pre-resignation data theft/i })).toBeInTheDocument();
 
     await userEvent.selectOptions(scenarioSelect, 'cyber-phishing-to-ransomware');
-    expect(screen.getByText(/Convert one stolen session into estate-wide encryption/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Convert one stolen session into estate-wide encryption/i).length).toBeGreaterThan(0);
   });
 
   it('provides a browsable insider-focused scenario library with ATT&CK references', async () => {

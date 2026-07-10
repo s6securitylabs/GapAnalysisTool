@@ -70,7 +70,14 @@ export interface ScenarioAssessment {
   readinessScore: number;
 }
 
-export const defaultDemoSourceIds: LogSourceId[] = ['idp-auth', 'endpoint-edr', 'saas-audit', 'hr-case', 'siem-enrichment'];
+export const defaultDemoSourceIds: LogSourceId[] = [
+  'idp-auth',
+  'endpoint-edr',
+  'saas-audit',
+  'workforce-lifecycle',
+  'identity-governance',
+  'siem-enrichment',
+];
 
 export const maturityLabels: Record<VerificationMaturity, string> = {
   'not-collected': 'Not collected',

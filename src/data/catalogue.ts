@@ -1,3 +1,6 @@
+import { buildAssessmentScenarios } from '../lib/build-assessment-scenarios';
+import { threatModel } from './threat-model';
+
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 export type EvidencePriority = 'critical' | 'recommended' | 'optional';
 
@@ -10,7 +13,10 @@ export type LogSourceId =
   | 'vpn'
   | 'proxy-dns'
   | 'saas-audit'
-  | 'hr-case'
+  | 'workforce-lifecycle'
+  | 'identity-governance'
+  | 'asset-custody'
+  | 'case-management'
   | 'physical-access'
   | 'privileged-admin'
   | 'cloud-storage'
@@ -125,11 +131,22 @@ const logSourceVerification: Record<LogSourceId, LogVerificationCheck[]> = {
     { id: 'saas-login-logout', label: 'Application login/logout and session details', priority: 'recommended', verificationQuestion: 'Can we show app-specific login/logout or session lifecycle where separate from IdP?', requiredFields: ['actor', 'app', 'loginTime', 'logoutTime', 'sessionId', 'ip'], objective: 'Tie application actions to sessions and devices.' },
     { id: 'saas-admin-config', label: 'Admin/configuration and audit export changes', priority: 'recommended', verificationQuestion: 'Can we detect SaaS admin changes, audit-log disablement, retention changes, API token creation, and export jobs?', requiredFields: ['actor', 'adminAction', 'target', 'oldValue', 'newValue', 'timestamp'], objective: 'Detect privilege misuse and evidence tampering inside SaaS platforms.' },
   ],
-  'hr-case': [
+  'workforce-lifecycle': [
     { id: 'hr-lifecycle-dates', label: 'Joiner, mover, leaver, and contractor lifecycle', priority: 'critical', verificationQuestion: 'Do we have authoritative start, transfer, notice, leave, resignation, termination, and contractor end dates without collecting reasons that are not needed for the investigation?', requiredFields: ['employeeId', 'workerType', 'status', 'startDate', 'effectiveDate', 'contractEndDate'], objective: 'Correlate technical activity to defined workforce transition windows and verify timely control changes.' },
     { id: 'hr-role-context', label: 'Role, manager, team, location, and expected access', priority: 'critical', verificationQuestion: 'Can investigators verify the person’s current role, manager, department, work location, privileged duties, and approved access profile at the time of activity?', requiredFields: ['employeeId', 'role', 'department', 'manager', 'workLocation', 'accessProfile', 'effectiveDate'], objective: 'Distinguish legitimate job activity from access that is inconsistent with current duties or a recent move.' },
+  ],
+  'identity-governance': [
+    { id: 'ig-access-recertification', label: 'Access recertification and entitlement reviews', priority: 'critical', verificationQuestion: 'Can we prove scheduled and event-driven access recertification, reviewer decisions, residual entitlements, and overdue reviews?', requiredFields: ['employeeId', 'campaignId', 'reviewer', 'entitlement', 'decision', 'dueDate', 'completedAt'], objective: 'Detect retained or excessive access after role changes and standing privilege reviews.' },
+    { id: 'ig-transition-tasks', label: 'Joiner, mover, and leaver identity tasks', priority: 'critical', verificationQuestion: 'Can we prove identity provisioning, transfer, session revocation, and exception approvals completed on time with a named control owner?', requiredFields: ['employeeId', 'eventType', 'taskId', 'controlOwner', 'dueDate', 'completedAt', 'exceptionId'], objective: 'Detect control failures that leave unnecessary identity access available during workforce transitions.' },
+    { id: 'ig-exception-approvals', label: 'Standing access and exception approvals', priority: 'recommended', verificationQuestion: 'Can investigators retrieve exception IDs, approvers, scope, expiry, and compensating controls for non-standard access?', requiredFields: ['exceptionId', 'approver', 'scope', 'expiry', 'compensatingControl'], objective: 'Separate approved residual access from uncontrolled privilege retention.' },
+  ],
+  'asset-custody': [
+    { id: 'asset-assignment', label: 'Device and media assignment records', priority: 'critical', verificationQuestion: 'Do we have current assignment of laptops, phones, tokens, removable media, and high-value assets to a named worker or contractor?', requiredFields: ['employeeId', 'assetId', 'assetType', 'assignedAt', 'custodian', 'status'], objective: 'Prove which managed assets were under a worker’s custody during a transition or investigation window.' },
+    { id: 'asset-return', label: 'Device return, wipe, and recovery', priority: 'critical', verificationQuestion: 'Can we prove device or media return, remote wipe, recovery-key handling, and residual unreturned assets after offboarding?', requiredFields: ['employeeId', 'assetId', 'returnedAt', 'wipeStatus', 'recoveryKeyHandled', 'exceptionId'], objective: 'Close physical and cryptographic custody gaps that keep data reachable after access should end.' },
+    { id: 'asset-custody-audit', label: 'Custody change audit trail', priority: 'recommended', verificationQuestion: 'Can we show reassignment, lost/stolen reports, temporary loan, and custody exceptions with approver context?', requiredFields: ['assetId', 'fromCustodian', 'toCustodian', 'reason', 'approver', 'timestamp'], objective: 'Support chain-of-custody reconstruction for devices and media used in sensitive activity.' },
+  ],
+  'case-management': [
     { id: 'hr-case-context', label: 'Governed case, policy, training, and conflict context', priority: 'recommended', verificationQuestion: 'Can approved investigators retrieve only relevant case IDs, formal policy exceptions, required training or acknowledgement status, declared conflicts, corrective actions, and legal holds?', requiredFields: ['caseId', 'caseType', 'policyException', 'trainingStatus', 'conflictDeclaration', 'legalHold', 'approvalId'], objective: 'Add documented organisational context without ingesting unrestricted HR notes or treating a workplace issue as proof of intent.' },
-    { id: 'hr-transition-controls', label: 'Transition control and access-review outcomes', priority: 'critical', verificationQuestion: 'Can we prove that access recertification, transfer/offboarding tasks, device return, session revocation, and exception approvals were completed on time?', requiredFields: ['employeeId', 'eventType', 'taskId', 'controlOwner', 'dueDate', 'completedAt', 'exceptionId'], objective: 'Detect control failures that leave unnecessary access available during joiner, mover, leaver, or contractor transitions.' },
     { id: 'hr-referral-governance', label: 'Human referral and multidisciplinary review governance', priority: 'recommended', verificationQuestion: 'Are HR, legal, privacy, security, and physical-security referrals recorded with source, approval, minimum-necessary summary, review outcome, retention, and appeal or correction path?', requiredFields: ['referralId', 'referralSource', 'approvalId', 'purpose', 'reviewers', 'outcome', 'retentionUntil'], objective: 'Create an accountable human review process for contextual signals and prevent automated employee risk scoring.' },
     { id: 'hr-access-controls', label: 'Privacy approval and access audit', priority: 'critical', verificationQuestion: 'Do we log who accessed workforce/case context, under what approval and lawful purpose, which fields were viewed, and when the access was reviewed?', requiredFields: ['viewer', 'approvalId', 'purpose', 'fieldsAccessed', 'accessTime', 'caseId', 'reviewDate'], objective: 'Enforce purpose limitation, least privilege, accountability, and review for sensitive workforce information.' },
   ],
@@ -228,13 +245,40 @@ export const logSources: LogSource[] = [
     verificationChecks: logSourceVerification['saas-audit'],
   },
   {
-    id: 'hr-case',
-    name: 'Workforce lifecycle / case context',
+    id: 'workforce-lifecycle',
+    name: 'Workforce lifecycle',
     category: 'Workforce context',
-    description: 'Governed joiner/mover/leaver dates, role and manager context, access-review outcomes, formal policy/training/exception records, and multidisciplinary case referrals.',
-    commonFields: ['employeeId', 'workerType', 'status', 'role', 'department', 'manager', 'effectiveDate', 'caseId', 'approvalId'],
-    collectionNotes: 'Use minimum-necessary structured fields, documented purpose, human review, access auditing, retention limits, and corroborating technical evidence. Exclude medical details, protected attributes, private communications, rumours, and unstructured performance notes.',
-    verificationChecks: logSourceVerification['hr-case'],
+    description: 'Governed joiner, mover, leaver, and contractor dates plus role, manager, location, and expected-access profile for control timing.',
+    commonFields: ['employeeId', 'workerType', 'status', 'role', 'department', 'manager', 'workLocation', 'accessProfile', 'effectiveDate'],
+    collectionNotes: 'Use minimum-necessary structured lifecycle and role fields under a documented purpose and human review. Exclude medical details, protected attributes, private communications, rumours, and unstructured performance notes. Lifecycle context is a control-timing lead, not proof of intent.',
+    verificationChecks: logSourceVerification['workforce-lifecycle'],
+  },
+  {
+    id: 'identity-governance',
+    name: 'Identity governance',
+    category: 'Workforce context',
+    description: 'Access recertification outcomes, transfer and offboarding task completion, session-revocation requests, and exception approvals.',
+    commonFields: ['employeeId', 'eventType', 'reviewId', 'taskId', 'controlOwner', 'decision', 'dueDate', 'completedAt', 'exceptionId'],
+    collectionNotes: 'Record objective control completion and approvals only. Do not score people; use these records to verify least privilege and timely entitlement change during transitions.',
+    verificationChecks: logSourceVerification['identity-governance'],
+  },
+  {
+    id: 'asset-custody',
+    name: 'Asset custody',
+    category: 'Workforce context',
+    description: 'Device, badge, token, and removable-media assignment, return, recovery, and disposal evidence with chain of custody.',
+    commonFields: ['employeeId', 'assetId', 'assetType', 'assignedAt', 'dueReturnAt', 'returnedAt', 'returnStatus', 'custodyEvent', 'approvalId'],
+    collectionNotes: 'Limit collection to custody events needed for offboarding and investigation readiness. Possession or late return is a control lead requiring corroboration, not standalone proof of misuse.',
+    verificationChecks: logSourceVerification['asset-custody'],
+  },
+  {
+    id: 'case-management',
+    name: 'Case management',
+    category: 'Workforce context',
+    description: 'Formal case, policy, training, and conflict context; multidisciplinary referral governance; and privacy access audit for sensitive workforce records.',
+    commonFields: ['caseId', 'caseType', 'policyException', 'trainingStatus', 'conflictDeclaration', 'legalHold', 'referralId', 'approvalId', 'viewer', 'purpose'],
+    collectionNotes: 'Use purpose limitation, least privilege, human review, field-level auditing, retention limits, and correction or appeal paths. Exclude unrestricted HR notes, medical details, protected attributes, private communications, and rumours.',
+    verificationChecks: logSourceVerification['case-management'],
   },
   {
     id: 'physical-access',
@@ -296,7 +340,7 @@ export const riskVectors: RiskVector[] = [
         id: 'q-resignation-context',
         question: 'Was the activity close to resignation, termination, or an active HR case?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'primary', rationale: 'Provides workforce timing and case context.' },
+          { sourceId: 'workforce-lifecycle', strength: 'primary', rationale: 'Provides workforce timing and transition context.' },
           { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Confirms account, device, and location context for the session.' },
         ],
       },
@@ -452,7 +496,7 @@ export const riskVectors: RiskVector[] = [
         id: 'q-approval-chain',
         question: 'Were segregation-of-duties or approval rules bypassed?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'supporting', rationale: 'Provides job role, department, and case context.' },
+          { sourceId: 'workforce-lifecycle', strength: 'supporting', rationale: 'Provides job role and department context.' },
           { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Confirms authenticating user/session and potential anomalous access.' },
         ],
       },
@@ -497,7 +541,8 @@ export const riskVectors: RiskVector[] = [
         id: 'q-term-date-access',
         question: 'Did the account authenticate or access systems after the termination/effective transfer date?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'primary', rationale: 'Provides authoritative workforce status and dates.' },
+          { sourceId: 'workforce-lifecycle', strength: 'primary', rationale: 'Provides authoritative workforce status and dates.' },
+          { sourceId: 'identity-governance', strength: 'supporting', rationale: 'Shows whether offboarding and access-removal tasks completed on time.' },
           { sourceId: 'idp-auth', strength: 'primary', rationale: 'Shows successful and failed authentication after status changes.' },
         ],
       },
@@ -507,6 +552,7 @@ export const riskVectors: RiskVector[] = [
         evidence: [
           { sourceId: 'saas-audit', strength: 'supporting', rationale: 'Shows application actions after status changes.' },
           { sourceId: 'file-access', strength: 'supporting', rationale: 'Shows file/repository access after status changes.' },
+          { sourceId: 'asset-custody', strength: 'context', rationale: 'Shows whether assigned devices or media remained unreturned after the transition date.' },
           { sourceId: 'vpn', strength: 'context', rationale: 'Adds remote session context for access attempts.' },
         ],
       },
@@ -524,7 +570,7 @@ export const riskVectors: RiskVector[] = [
         id: 'q-role-baseline',
         question: 'Is the accessed system or data consistent with the user role, project, and recent work context?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'primary', rationale: 'Provides role, department, manager, and case context for role-based review.' },
+          { sourceId: 'workforce-lifecycle', strength: 'primary', rationale: 'Provides role, department, and manager context for role-based review.' },
           { sourceId: 'siem-enrichment', strength: 'supporting', rationale: 'Adds peer group, data sensitivity, and asset criticality context.' },
         ],
       },
@@ -627,7 +673,9 @@ export const riskVectors: RiskVector[] = [
         id: 'q-workforce-transition-window',
         question: 'Can we establish an authoritative transition window, current duties, expected access, and completion status for required controls?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'primary', rationale: 'Provides structured lifecycle, role, manager, access-review, and control-completion context under governed access.' },
+          { sourceId: 'workforce-lifecycle', strength: 'primary', rationale: 'Provides structured lifecycle, role, and manager context under governed access.' },
+          { sourceId: 'identity-governance', strength: 'primary', rationale: 'Records access recertification, transition task completion, and exception approvals.' },
+          { sourceId: 'asset-custody', strength: 'supporting', rationale: 'Shows device and media assignment or return obligations during the transition.' },
           { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Shows whether roles, groups, sessions, or tokens changed in line with the workforce event.' },
           { sourceId: 'privileged-admin', strength: 'supporting', rationale: 'Shows privileged access and approvals that may require recertification or removal.' },
         ],
@@ -636,7 +684,7 @@ export const riskVectors: RiskVector[] = [
         id: 'q-workforce-corroboration-governance',
         question: 'Is the contextual signal purpose-limited, independently corroborated, and reviewed by authorised people before action?',
         evidence: [
-          { sourceId: 'hr-case', strength: 'primary', rationale: 'Records approval, minimum-necessary context, referral provenance, human review, retention, and audit history.' },
+          { sourceId: 'case-management', strength: 'primary', rationale: 'Records approval, minimum-necessary context, referral provenance, human review, retention, and audit history.' },
           { sourceId: 'siem-enrichment', strength: 'context', rationale: 'Correlates business role, asset criticality, and observable technical behaviour without becoming standalone evidence.' },
           { sourceId: 'physical-access', strength: 'context', rationale: 'May corroborate a defined incident timeline when facility evidence is relevant and lawfully in scope.' },
         ],
@@ -677,7 +725,7 @@ export const riskVectors: RiskVector[] = [
           { sourceId: 'dlp', strength: 'primary', rationale: 'Captures sensitive-data policy matches and action outcomes.' },
           { sourceId: 'email', strength: 'supporting', rationale: 'Shows recipient, attachment, and message metadata for misdirected email.' },
           { sourceId: 'saas-audit', strength: 'supporting', rationale: 'Shows sharing links, permissions, and external collaboration events.' },
-          { sourceId: 'hr-case', strength: 'context', rationale: 'Provides training, policy exception, or case context with restricted handling.' },
+          { sourceId: 'case-management', strength: 'context', rationale: 'Provides training, policy exception, or case context with restricted handling.' },
         ],
       },
     ],
@@ -717,16 +765,207 @@ export const riskVectors: RiskVector[] = [
           { sourceId: 'idp-auth', strength: 'primary', rationale: 'Correlates user sessions, access changes, and authentication timing across accounts.' },
           { sourceId: 'saas-audit', strength: 'primary', rationale: 'Shows cross-user actions in business and collaboration applications.' },
           { sourceId: 'file-access', strength: 'supporting', rationale: 'Shows shared repository/file access and transfer sequence.' },
-          { sourceId: 'hr-case', strength: 'context', rationale: 'Adds role, reporting chain, conflict, or case context under strict access controls.' },
+          { sourceId: 'case-management', strength: 'context', rationale: 'Adds conflict or case context under strict access controls.' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'ransomware-encryption-impact',
+    domain: 'External Cyber',
+    name: 'Ransomware encryption and service disruption',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: endpoint encryption and recovery denial. ATT&CK: T1486 Data Encrypted for Impact, T1490 Inhibit System Recovery.',
+    description: 'An external actor encrypts business systems or disables recovery after initial access through phishing or malware.',
+    investigationQuestions: [
+      {
+        id: 'q-ransomware-entry',
+        question: 'How did the actor gain the initial foothold and reach encryption capability?',
+        evidence: [
+          { sourceId: 'email', strength: 'primary', rationale: 'Captures phishing delivery and malicious attachments or links.' },
+          { sourceId: 'endpoint-edr', strength: 'primary', rationale: 'Shows process lineage, payload execution, and encryption activity.' },
+          { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Adds session and account-compromise context.' },
+        ],
+      },
+      {
+        id: 'q-ransomware-recovery',
+        question: 'Were backups, recovery paths, or response ownership impaired?',
+        evidence: [
+          { sourceId: 'siem-enrichment', strength: 'primary', rationale: 'Correlates impact alerts, source health, and case timeline.' },
+          { sourceId: 'privileged-admin', strength: 'supporting', rationale: 'Shows privileged recovery or sabotage of backup controls.' },
+          { sourceId: 'cloud-storage', strength: 'supporting', rationale: 'Shows backup object deletion or recovery-store access.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'saas-token-abuse',
+    domain: 'External Cyber',
+    name: 'Stolen SaaS OAuth or session token abuse',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: token replay against SaaS without password use. ATT&CK: T1528 Steal Application Access Token, T1078 Valid Accounts.',
+    description: 'An attacker obtains delegated application consent or a stolen SaaS token and reads mail or files without interactive login.',
+    investigationQuestions: [
+      {
+        id: 'q-token-consent',
+        question: 'Can we prove which app or token gained access, with scopes, actor, and consent path?',
+        evidence: [
+          { sourceId: 'idp-auth', strength: 'primary', rationale: 'Records OAuth consent, app grants, and token issuance context.' },
+          { sourceId: 'saas-audit', strength: 'primary', rationale: 'Shows subsequent mail/file access by the delegated principal.' },
+          { sourceId: 'email', strength: 'supporting', rationale: 'Corroborates mailbox collection or rule changes.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'business-email-compromise-payment',
+    domain: 'External Cyber',
+    name: 'Business email compromise payment diversion',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: mailbox takeover and invoice fraud. ATT&CK: T1566 Phishing, T1114 Email Collection, T1534 Internal Spearphishing.',
+    description: 'An external actor hijacks or spoofs trusted mail threads to redirect a supplier payment.',
+    investigationQuestions: [
+      {
+        id: 'q-bec-thread',
+        question: 'Can we reconstruct mailbox access, rule changes, and payment-instruction alteration?',
+        evidence: [
+          { sourceId: 'email', strength: 'primary', rationale: 'Shows mailbox sessions, forwarding rules, and message metadata.' },
+          { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Shows account access and session anomalies around the fraud window.' },
+          { sourceId: 'saas-audit', strength: 'supporting', rationale: 'Shows finance or ERP record changes tied to the request.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'api-object-level-authz-failure',
+    domain: 'External Cyber',
+    name: 'Public API object-level authorization failure',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: broken object-level authorization and bulk enumeration. ATT&CK: T1190 Exploit Public-Facing Application, T1213 Data from Information Repositories.',
+    description: 'An unauthenticated or low-privilege client enumerates customer records through valid API routes with weak object checks.',
+    investigationQuestions: [
+      {
+        id: 'q-api-enum',
+        question: 'Can we prove which API routes, object IDs, volumes, and client identities were involved?',
+        evidence: [
+          { sourceId: 'proxy-dns', strength: 'primary', rationale: 'Captures request volume, client, path, and destination context.' },
+          { sourceId: 'saas-audit', strength: 'primary', rationale: 'Shows application/API audit of object reads and errors.' },
+          { sourceId: 'siem-enrichment', strength: 'supporting', rationale: 'Adds asset criticality and known-good client baselines.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'software-dependency-compromise',
+    domain: 'External Cyber',
+    name: 'Compromised software dependency',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: trusted update or dependency abuse. ATT&CK: T1195 Supply Chain Compromise, T1072 Software Deployment Tools.',
+    description: 'A trusted package or update introduces malicious post-install behaviour into build or production environments.',
+    investigationQuestions: [
+      {
+        id: 'q-supply-chain',
+        question: 'Can we prove which package, pipeline, hosts, and outbound callbacks participated?',
+        evidence: [
+          { sourceId: 'file-access', strength: 'primary', rationale: 'Shows package install, artifact write, and repository access.' },
+          { sourceId: 'endpoint-edr', strength: 'primary', rationale: 'Shows post-install process lineage on build or runtime hosts.' },
+          { sourceId: 'proxy-dns', strength: 'supporting', rationale: 'Shows unexpected outbound destinations from the pipeline.' },
+          { sourceId: 'saas-audit', strength: 'context', rationale: 'Shows CI/CD or package-registry audit events.' },
+        ],
+      },
+      {
+        id: 'q-supply-secrets',
+        question: 'Were build secrets, tokens, or production credentials exposed?',
+        evidence: [
+          { sourceId: 'privileged-admin', strength: 'supporting', rationale: 'Shows privileged credential use after compromise.' },
+          { sourceId: 'siem-enrichment', strength: 'primary', rationale: 'Supports recall, rotation, and case evidence.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'public-cloud-exposure',
+    domain: 'External Cyber',
+    name: 'Public cloud storage exposure and harvesting',
+    severity: 'high',
+    techniqueAlignment: 'External cyber: unintended public object access. ATT&CK: T1530 Data from Cloud Storage, T1580 Cloud Infrastructure Discovery.',
+    description: 'An unexpired public-access exception or misconfigured bucket allows anonymous enumeration and download of sensitive objects.',
+    investigationQuestions: [
+      {
+        id: 'q-cloud-public',
+        question: 'Which buckets or objects were publicly readable and for how long?',
+        evidence: [
+          { sourceId: 'cloud-storage', strength: 'primary', rationale: 'Captures ACL, policy, and object access events.' },
+          { sourceId: 'siem-enrichment', strength: 'supporting', rationale: 'Adds exposure window and case correlation.' },
+        ],
+      },
+      {
+        id: 'q-cloud-harvest',
+        question: 'Was anonymous harvesting observed, and what data left?',
+        evidence: [
+          { sourceId: 'proxy-dns', strength: 'supporting', rationale: 'Adds external request context where available.' },
+          { sourceId: 'dlp', strength: 'supporting', rationale: 'Helps classify sensitive content involved.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'availability-extortion',
+    domain: 'External Cyber',
+    name: 'Distributed denial of service and availability extortion',
+    severity: 'high',
+    techniqueAlignment: 'External cyber: volumetric or application-layer availability attack. ATT&CK: T1498 Network Denial of Service, T1499 Endpoint Denial of Service.',
+    description: 'An external actor floods network or application paths to disrupt revenue services and demand payment.',
+    investigationQuestions: [
+      {
+        id: 'q-ddos-signal',
+        question: 'Which paths, dependencies, and customers were affected?',
+        evidence: [
+          { sourceId: 'proxy-dns', strength: 'primary', rationale: 'Shows edge traffic volume, sources, and blocked/allowed decisions.' },
+          { sourceId: 'saas-audit', strength: 'supporting', rationale: 'Captures application latency, errors, and critical route health.' },
+        ],
+      },
+      {
+        id: 'q-ddos-response',
+        question: 'Was upstream mitigation and continuity response timely and evidenced?',
+        evidence: [
+          { sourceId: 'siem-enrichment', strength: 'primary', rationale: 'Records incident ownership, provider actions, and recovery evidence.' },
+          { sourceId: 'idp-auth', strength: 'context', rationale: 'Separates genuine customer traffic from attack noise where identity is present.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'detection-pipeline-suppression',
+    domain: 'External Cyber',
+    name: 'Detection pipeline or logging suppression',
+    severity: 'critical',
+    techniqueAlignment: 'External cyber: impair defenses by disabling or redirecting telemetry. ATT&CK: T1562.008 Impair Defenses: Disable or Modify Cloud Logs, T1078.004 Valid Accounts: Cloud Accounts.',
+    description: 'An attacker uses a compromised automation identity to suppress audit delivery or alert routing before impact.',
+    investigationQuestions: [
+      {
+        id: 'q-pipeline-change',
+        question: 'Which logging sinks, alert routes, or sensors changed?',
+        evidence: [
+          { sourceId: 'saas-audit', strength: 'primary', rationale: 'Captures configuration changes to audit and alert routing.' },
+          { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Attributes non-interactive automation identity use.' },
+        ],
+      },
+      {
+        id: 'q-pipeline-health',
+        question: 'Would independent pipeline-health monitoring have raised the gap?',
+        evidence: [
+          { sourceId: 'siem-enrichment', strength: 'primary', rationale: 'Source freshness, volume, and parser health are the independent control.' },
+          { sourceId: 'cloud-storage', strength: 'context', rationale: 'May show recovery-resource enumeration before impact.' },
         ],
       },
     ],
   },
 ];
 
-
 export const threatFlow: ThreatFlowStep[] = [
-  { id: 'trigger', label: 'Trigger / workforce context', description: 'Resignation, transfer, HR case, privileged change, compromised-account signal, or policy exception creates the context for review.', controls: ['hr-case', 'idp-auth', 'siem-enrichment'] },
+  { id: 'trigger', label: 'Trigger / workforce context', description: 'Resignation, transfer, HR case, privileged change, compromised-account signal, or policy exception creates the context for review.', controls: ['workforce-lifecycle', 'identity-governance', 'idp-auth', 'siem-enrichment'] },
   { id: 'access', label: 'Access establishment', description: 'User authenticates, obtains privilege, starts VPN/app session, or consents a delegated app.', controls: ['idp-auth', 'vpn', 'privileged-admin', 'saas-audit'] },
   { id: 'discovery', label: 'Discovery / reconnaissance', description: 'User searches, browses repositories, enumerates records, or performs command-line discovery.', controls: ['saas-audit', 'file-access', 'endpoint-edr', 'siem-enrichment'] },
   { id: 'collection', label: 'Collection / staging', description: 'Sensitive records, files, messages, or objects are downloaded, exported, archived, or staged.', controls: ['saas-audit', 'file-access', 'cloud-storage', 'endpoint-edr', 'email'] },
@@ -735,21 +974,11 @@ export const threatFlow: ThreatFlowStep[] = [
   { id: 'concealment', label: 'Concealment / evidence integrity', description: 'Logging, sensors, retention, permissions, or audit export paths are disabled or altered.', controls: ['privileged-admin', 'endpoint-edr', 'siem-enrichment', 'saas-audit'] },
 ];
 
-export const threatScenarios: ThreatScenario[] = [
-  { id: 'pre-resignation-data-theft', title: 'Pre-resignation data theft', objective: 'Detect and investigate unusual access, collection, and transfer of sensitive data before departure.', flowStepIds: ['trigger', 'access', 'discovery', 'collection', 'transfer'], vectorIds: ['bulk-saas-download', 'repo-clone-archive', 'email-exfil-forwarding', 'search-recon-sensitive-data', 'external-share-cloud'], criticalSources: ['hr-case', 'idp-auth', 'saas-audit', 'file-access'], recommendedSources: ['dlp', 'email', 'endpoint-edr', 'proxy-dns'] },
-  { id: 'privileged-sabotage', title: 'Privileged sabotage or disruption', objective: 'Prove whether privileged commands, deletes, or control disablement were approved and attributable.', flowStepIds: ['access', 'impact', 'concealment'], vectorIds: ['privileged-outside-window', 'destructive-admin', 'concealment-log-tamper'], criticalSources: ['privileged-admin', 'endpoint-edr', 'siem-enrichment'], recommendedSources: ['saas-audit', 'cloud-storage', 'idp-auth'] },
-  { id: 'offboarding-failure', title: 'Offboarding failure / retained access', objective: 'Identify accounts or sessions that remain active after transfer, termination, or contractor end date.', flowStepIds: ['trigger', 'access', 'collection'], vectorIds: ['access-retained-post-term', 'unusual-valid-access'], criticalSources: ['hr-case', 'idp-auth'], recommendedSources: ['saas-audit', 'file-access', 'vpn'] },
-  { id: 'shadow-it-oauth', title: 'Shadow IT OAuth data exposure', objective: 'Detect unapproved app consent and determine whether the app accessed mail, files, or SaaS data.', flowStepIds: ['access', 'collection', 'transfer'], vectorIds: ['oauth-shadow-it', 'email-exfil-forwarding'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['email', 'dlp', 'proxy-dns'] },
-  { id: 'business-system-fraud', title: 'Business-system fraud or record tampering', objective: 'Show who changed records, whether approvals were bypassed, and what business impact resulted.', flowStepIds: ['access', 'impact', 'concealment'], vectorIds: ['business-record-tamper', 'mass-role-escalation'], criticalSources: ['saas-audit', 'idp-auth'], recommendedSources: ['hr-case', 'siem-enrichment', 'privileged-admin'] },
-  { id: 'compromised-account-driven', title: 'Compromised or outsmarted user', objective: 'Differentiate intentional internal misuse from phishing, token theft, social engineering, or malware-driven activity.', flowStepIds: ['access', 'collection', 'transfer'], vectorIds: ['compromised-outsmarted-user', 'negligent-mistaken-disclosure'], criticalSources: ['idp-auth', 'endpoint-edr'], recommendedSources: ['email', 'saas-audit', 'dlp'] },
-  { id: 'workforce-transition-review', title: 'Workforce transition / access review', objective: 'Correlate a joiner, mover, leaver, contractor, or formal case window with observable control completion and technical evidence under strict privacy governance.', flowStepIds: ['trigger', 'access', 'discovery', 'collection'], vectorIds: ['workforce-transition-control-failure', 'access-retained-post-term', 'unusual-valid-access'], criticalSources: ['hr-case', 'idp-auth'], recommendedSources: ['privileged-admin', 'siem-enrichment', 'saas-audit', 'physical-access'] },
-  { id: 'physical-cyber-correlation', title: 'Physical/cyber anomaly', objective: 'Correlate badge/facility evidence with device, VPN, and identity sessions without treating location as standalone proof.', flowStepIds: ['trigger', 'access', 'collection'], vectorIds: ['physical-cyber-anomaly'], criticalSources: ['idp-auth'], recommendedSources: ['physical-access', 'vpn', 'endpoint-edr'] },
-  { id: 'removable-media-exfil', title: 'Removable-media (USB) exfiltration', objective: 'Prove whether sensitive files were staged or copied to USB/removable media outside normal duties, and by which device and user.', flowStepIds: ['trigger', 'discovery', 'collection', 'transfer'], vectorIds: ['removable-media-exfil'], criticalSources: ['endpoint-edr'], recommendedSources: ['file-access', 'dlp', 'hr-case'] },
-  { id: 'collusion-ring', title: 'Cross-user collusion', objective: 'Reconstruct a multi-user timeline of coordinated access, collection, transfer, or approval bypass across multiple users.', flowStepIds: ['trigger', 'access', 'discovery', 'collection', 'transfer'], vectorIds: ['collusion-cross-user'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['file-access', 'hr-case', 'siem-enrichment'] },
-];
+/** Single source of truth: assessment scenarios are derived from the threat-model library. */
+export const threatScenarios: ThreatScenario[] = buildAssessmentScenarios(threatModel.scenarios);
 
 export const catalogue: Catalogue = {
-  version: '0.4.0',
+  version: '0.5.0',
   summary: 'Evidence and investigation-readiness mappings, including privacy-governed workforce and organisational context. Validate technique mappings against your environment.',
   note: 'Evidence coverage and investigation readiness catalogue. Contextual signals require governance and corroboration, not prediction or standalone proof.',
   logSources,
