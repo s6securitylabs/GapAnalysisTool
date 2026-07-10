@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["npm", "dockerfile", "github-actions"],
+  "minimumReleaseAge": "1 day",
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "rangeStrategy": "pin"
+    }
+  ],
+  "postUpdateOptions": ["pnpmDedupe"],
+  "labels": ["dependencies", "renovate"]
+}
