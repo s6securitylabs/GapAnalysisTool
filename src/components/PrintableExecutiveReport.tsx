@@ -46,7 +46,7 @@ export function PrintableExecutiveReport({
   const priorityActions = summary.topMissingSources.slice(0, 6);
   const readySources = [...verificationSummary.values()].filter((item) => item.effective).length;
   const partialSources = [...verificationSummary.values()].filter((item) => !item.effective && item.readinessScore > 0 && !item.acceptedRisk).length;
-  const blindSources = [...verificationSummary.values()].filter((item) => item.readinessScore === 0 && !item.acceptedRisk).length;
+  const acceptedRiskSources = [...verificationSummary.values()].filter((item) => item.acceptedRisk).length;
   const riskCounts = (['critical', 'high', 'medium', 'low'] as const).map((severity) => ({
     severity,
     count: openGaps.filter((item) => item.vector.severity === severity).length,
@@ -64,6 +64,7 @@ export function PrintableExecutiveReport({
       </div>
 
       <article className="executive-report" aria-label="Printable executive report">
+        {mode === 'demo' && <div className="demo-report-banner" role="note">Demo — synthetic data</div>}
         <header className="report-cover report-page">
           <div className="report-brand-row">
             <div className="report-brand"><span>S6</span><strong>Security Engineering Hub</strong></div>
@@ -94,7 +95,7 @@ export function PrintableExecutiveReport({
             <ReportMetric label="High/critical gaps" value={summary.highRiskGapCount.toString()} tone="danger" />
             <ReportMetric label="Ready sources" value={readySources.toString()} tone="success" />
             <ReportMetric label="Partially ready" value={partialSources.toString()} tone="warning" />
-            <ReportMetric label="No usable evidence" value={blindSources.toString()} tone="neutral" />
+            <ReportMetric label="Accepted risk" value={acceptedRiskSources.toString()} tone="neutral" />
           </div>
           <div className={`executive-verdict executive-verdict-${report.rag}`}>
             <strong>Executive assessment</strong>
@@ -158,7 +159,7 @@ export function PrintableExecutiveReport({
               <article className="scenario-risk-card" key={scenario.id}>
                 <span className="scenario-rank">{String(index + 1).padStart(2, '0')}</span>
                 <div><h3>{scenario.title}</h3><p>{scenario.objective}</p></div>
-                <div className="scenario-score"><strong>{formatPercent(status.readinessScore)}</strong><span>{status.label}</span></div>
+                <div className="scenario-score"><strong>{formatPercent(status.readinessScore)}</strong><span>{executiveScenarioLabel(status.readinessScore)}</span></div>
               </article>
             ))}
           </div>
@@ -171,7 +172,7 @@ export function PrintableExecutiveReport({
         <section className="report-section report-page-break-before">
           <div className="report-section-heading">
             <div><p className="report-kicker">Action plan</p><h2>Priority evidence improvements</h2></div>
-            <p>Actions are ranked by the number and severity of investigation paths they improve. Blank ownership fields remain visibly unassigned.</p>
+            <p>Actions are ranked by the number and severity of investigation paths they improve. Recommendations remain catalogue guidance until owners and delivery dates are recorded.</p>
           </div>
           <div className="priority-action-list">
             {priorityActions.map((item, index) => {
@@ -199,4 +200,11 @@ export function PrintableExecutiveReport({
 
 function ReportMetric({ label, value, tone }: { label: string; value: string; tone: 'danger' | 'success' | 'warning' | 'neutral' }) {
   return <div className={`report-metric ${tone}`}><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function executiveScenarioLabel(score: number) {
+  if (score >= 0.8) return 'Investigable';
+  if (score >= 0.5) return 'Partially investigable';
+  if (score > 0) return 'Limited evidence';
+  return 'Evidence blind';
 }

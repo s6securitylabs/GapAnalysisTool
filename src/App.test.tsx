@@ -298,6 +298,7 @@ describe('App integrated assessment experience', () => {
     await userEvent.click(screen.getByRole('button', { name: /Open printable executive report/i }));
 
     expect(screen.getByRole('main')).toHaveClass('print-report-view');
+    expect(screen.getByRole('note')).toHaveTextContent(/Demo — synthetic data/i);
     expect(screen.getByRole('heading', { name: /Example evidence gap assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Overall readiness/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Where the organisation is exposed/i })).toBeInTheDocument();

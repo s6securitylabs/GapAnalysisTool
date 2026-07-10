@@ -2555,9 +2555,27 @@ small {
 }
 
 .executive-report {
+  position: relative;
   width: min(1120px, 100%);
   margin: 0 auto;
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.demo-report-banner {
+  position: sticky;
+  z-index: 12;
+  top: 78px;
+  width: fit-content;
+  margin: 0 18px -34px auto;
+  padding: 6px 10px;
+  border: 2px solid #a52a21;
+  border-radius: 6px;
+  color: #8f1d17;
+  background: #fff4f2;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .report-page,
@@ -2905,6 +2923,22 @@ small {
   .report-table th,
   .report-table td { padding: 2.2mm 1.5mm; }
   .report-footer { break-inside: avoid; }
+  .demo-report-banner {
+    position: fixed;
+    top: 2mm;
+    right: 4mm;
+    margin: 0;
+    color: #8f1d17;
+    background: #fff;
+  }
+  .report-table thead { display: table-header-group; }
+  .executive-report h1,
+  .executive-report h2,
+  .executive-report h3 { break-after: avoid; page-break-after: avoid; }
+  .executive-report td,
+  .executive-report dd,
+  .executive-report p,
+  .executive-report small { overflow-wrap: anywhere; }
 
   .mode-switch,
   .scenario-picker-shell,
