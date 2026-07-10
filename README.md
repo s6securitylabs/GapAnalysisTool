@@ -16,6 +16,26 @@ pnpm run build
 
 The app is published into SecHub as a static generated artifact under `/gaps-analysis-tool/app/`.
 
+## Use it
+
+### Option A: SecHub web app (recommended)
+
+Use the [SecHub web app](https://sechub.s6ops.com/gaps-analysis-tool/app/) for a zero-install assessment workspace. It requires no account, contains no application analytics or tracking code, and does not upload assessment content. Snapshots remain in your browser's local storage until you explicitly export them. Normal web infrastructure may retain ordinary HTTP access logs, but the app does not associate activity with an account or send assessment data to SecHub.
+
+### Option B: run it yourself
+
+For a fully self-hosted static copy, build and run the included Docker image locally:
+
+```bash
+git clone https://github.com/s6securitylabs/GapAnalysisTool.git
+cd GapAnalysisTool
+git checkout v1.0.0
+docker build --pull -t gap-analysis-tool:1.0.0 .
+docker run --rm --publish 127.0.0.1:18180:80 gap-analysis-tool:1.0.0
+```
+
+Open <http://127.0.0.1:18180>. The loopback binding keeps it local to the machine. Full Docker, Compose, non-Docker, privacy, and data-migration instructions are in the [installation and usage guide](docs/INSTALLATION.md).
+
 ## Product boundaries
 
 The tool is an assessment workspace, not a monitoring or case-management system. It does not ingest raw telemetry, determine intent, create alerts, or prove wrongdoing. Assessment data, remediation records, and snapshots remain in browser memory or local storage until a user explicitly exports them.
