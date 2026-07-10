@@ -24,7 +24,7 @@ Coverage means that required evidence is both usable and verified. Owning a prod
 
 The 2D attack-chain map and optional 3D simulation present the same scenario model. Neither creates separate coverage facts.
 
-The UI presents one ordered workflow: Overview, Scope, Source Readiness, Attack Scenarios, Gaps, Report, then References. A new assessment starts with blank evidence. The optional **New user guide** loads example data for exploration. The attack-scenario library contains 12 scenarios: nine insider/workforce scenarios and three external cyber scenarios. Scenario detail includes indicative MITRE ATT&CK references where they fit; accidental and other non-adversarial events are not forced into ATT&CK mappings.
+The UI presents one ordered workflow: Overview, Scope, Source Readiness, Attack Scenarios, Gaps, Report, then References. A new Live assessment starts with blank evidence. Demo data is optional and requires explicit activation. The attack-scenario library contains 17 scenarios: nine insider/workforce scenarios and eight external cyber scenarios. Scenario detail includes indicative MITRE ATT&CK references where they fit; accidental and other non-adversarial events are not forced into ATT&CK mappings.
 
 The Gaps step separates material investigation-path gaps from the source improvements needed to close them. The Report step provides Markdown, CSV, and JSON exports plus a polished printable HTML executive report with readiness graphics, risk distribution, domain coverage, weakest attack paths, and priority actions. Browser print can save the report as an A4 PDF.
 
