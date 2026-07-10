@@ -34,5 +34,7 @@ describe('executive report builder', () => {
     expect(report.topGaps.join(' ')).not.toMatch(/accountable owner/i);
     expect(report.markdown).toContain('# Gaps Analysis Tool Report Summary');
     expect(report.markdown).toContain('Demo assessment');
+    expect(report.scenarioSummary.join(' ')).toMatch(/critical evidence sources ready/i);
+    expect(report.scenarioSummary.join(' ')).not.toMatch(/controls stopped|stopped \/ investigable/i);
   });
 });

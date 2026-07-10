@@ -156,11 +156,11 @@ export function stagePosture(gapTypes: GapType[], actorPresent = true): StagePos
 
 function narrate(posture: StagePosture, blocked: boolean, contained: boolean, delayed: boolean): string {
   if (posture === 'no-action') return 'The actor never operates here. The estate can prove the negative.';
-  if (blocked) return 'Blocked. The chain stops here.';
+  if (blocked) return 'Strong preventive control. The action would be blocked and the chain would stop here.';
   if (contained) {
     return posture === 'unresolved'
-      ? 'Contained, but late. The alert existed long before anyone acted on it.'
-      : 'Contained. The blast radius is limited and the owner is named.';
+      ? 'Late containment would stop the chain here, but missing evidence would weaken confidence and scoping.'
+      : 'Strong containment would stop the chain here and preserve a defensible response path.';
   }
   switch (posture) {
     case 'blind':

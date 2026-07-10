@@ -662,7 +662,7 @@ function SimulationLegend() {
         <div><span className="legend-swatch actor" /> Moving actor / active stage</div>
         <div><span className="legend-swatch telemetry" /> Lit telemetry/evidence beam</div>
         <div><span className="legend-swatch blind" /> Blind or unlit stage</div>
-        <div><span className="legend-swatch blocked" /> Block or containment stops path</div>
+        <div><span className="legend-swatch blocked" /> Strong block or containment would stop path</div>
         <div><span className="legend-swatch delay" /> Delay/friction, not a stop</div>
         <div><span className="legend-swatch accepted-risk" /> Accepted risk, no coverage</div>
       </div>

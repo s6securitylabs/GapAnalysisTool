@@ -189,7 +189,7 @@ export function PrintableExecutiveReport({
           </div>
           <footer className="report-footer">
             <div><strong>Decision note</strong><p>{metadata.notes || 'No additional decision note was recorded.'}</p></div>
-            <div><strong>Evidence boundary</strong><p>This report measures evidence readiness. It does not ingest raw logs, prove malicious intent, or replace investigation and legal review.</p></div>
+            <div><strong>Evidence boundary</strong><p>Strong blocking controls would prevent the path. Strong containment would stop it after detection. Evidence readiness means investigators could prove what happened; it does not prove wrongdoing.</p></div>
             <small>Gaps Analysis Tool by S6 · Assessment model {catalogue.version} · Generated {generatedAt.toISOString()}</small>
           </footer>
         </section>

@@ -97,12 +97,12 @@ describe('getScenarioStatus', () => {
   const scenario = catalogue.threatScenarios[0];
   const firstCritical = scenario.criticalSources[0];
 
-  it('reports blind when no critical control is effective', () => {
+  it('reports blind when no critical evidence source is effective', () => {
     const summary = buildVerificationSummary(sources, createInitialAssessmentState('real'));
     expect(getScenarioStatus(scenario, summary).status).toBe('blind');
   });
 
-  it('reports stopped/investigable only when every critical control is effective', () => {
+  it('reports investigation-ready only when every critical evidence source is effective', () => {
     const readyState = stateWith(
       Object.fromEntries(
         scenario.criticalSources.map((id) => {
@@ -112,10 +112,10 @@ describe('getScenarioStatus', () => {
       ),
     );
     const summary = buildVerificationSummary(sources, readyState);
-    expect(getScenarioStatus(scenario, summary).status).toBe('stopped');
+    expect(getScenarioStatus(scenario, summary).status).toBe('investigation-ready');
   });
 
-  it('reports partial when some but not all critical controls are effective', () => {
+  it('reports partial when some but not all critical evidence sources are effective', () => {
     const source = sources.find((entry) => entry.id === firstCritical)!;
     const summary = buildVerificationSummary(
       sources,

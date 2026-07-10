@@ -246,6 +246,25 @@ describe('App integrated assessment experience', () => {
     expect(screen.queryByText(/Trust boundary|Handling caveats|Catalogue notes/i)).not.toBeInTheDocument();
   });
 
+  it('makes prevention, evidence, and governance terms easy to find', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /^References/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Definitions/i }));
+
+    expect(screen.getByRole('heading', { name: /Clear terms\. Defensible decisions\./i })).toBeInTheDocument();
+    expect(screen.getByText(/of \d+ terms/i)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('textbox', { name: /Search glossary/i }), 'would stop');
+    expect(screen.getByRole('heading', { name: /Preventive control/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Containment/i })).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByRole('textbox', { name: /Search glossary/i }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /Glossary category/i }), 'Governance and privacy');
+    expect(screen.getByRole('heading', { name: /Protected activity/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /DLP/i })).not.toBeInTheDocument();
+  });
+
   it('moves between workflow steps with arrow keys', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
@@ -327,6 +346,9 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('heading', { name: /Where the organisation is exposed/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Priority investigation gaps/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Priority evidence improvements/i })).toBeInTheDocument();
+    expect(screen.getByText(/Strong blocking controls would prevent the path/i)).toBeInTheDocument();
+    expect(screen.getByText(/Strong containment would stop it after detection/i)).toBeInTheDocument();
+    expect(screen.queryByText(/critical controls stopped|Stopped \/ investigable/i)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Print or save PDF/i }));
     expect(print).toHaveBeenCalledOnce();

@@ -77,7 +77,7 @@ export function buildExecutiveReport(params: {
   });
   const scenarioSummary = scenarios.map((scenario) => {
     const scenarioStatus = getScenarioStatus(scenario, verificationSummary);
-    return `${scenario.title}: ${scenarioStatus.label} (${formatPercent(scenarioStatus.readinessScore)} readiness, ${scenarioStatus.criticalEffective}/${scenario.criticalSources.length} critical controls stopped).`;
+    return `${scenario.title}: ${scenarioStatus.label} (${formatPercent(scenarioStatus.readinessScore)} readiness, ${scenarioStatus.criticalEffective}/${scenario.criticalSources.length} critical evidence sources ready).`;
   });
   const plainEnglishSummary = `Overall readiness is ${rag.toUpperCase()} at ${formatPercent(summary.overallScore)}. ${summary.highRiskGapCount} high or critical gaps remain. ${readySources.length} sources currently satisfy investigation-ready gating (all critical checks verified).`;
 

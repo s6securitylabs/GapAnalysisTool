@@ -1205,7 +1205,7 @@ function ScenarioCard({
       <div className="source-stats">
         <span>Scenario readiness {formatPercent(status.readinessScore)}</span>
         <span>Critical ready {status.criticalReady}/{scenario.criticalSources.length}</span>
-        <span>Critical stopped {status.criticalEffective}/{scenario.criticalSources.length}</span>
+        <span>Critical evidence ready {status.criticalEffective}/{scenario.criticalSources.length}</span>
       </div>
       <div className="scenario-flowline">
         {flowSteps.map((step) => {
@@ -1265,12 +1265,12 @@ function MiniFlow({
   return (
     <div className="mini-flow" aria-label="Internal scenario flow">
       {catalogue.threatFlow.map((step, index) => {
-        const stopped = step.controls.some((sourceId) => verificationSummary.get(sourceId)?.effective);
+        const evidenceReady = step.controls.some((sourceId) => verificationSummary.get(sourceId)?.effective);
         return (
-          <div className={`mini-flow-node ${stopped ? 'stopped' : 'open'}`} key={step.id} style={{ animationDelay: `${index * 0.12}s` }}>
+          <div className={`mini-flow-node ${evidenceReady ? 'evidence-ready' : 'open'}`} key={step.id} style={{ animationDelay: `${index * 0.12}s` }}>
             <span>{index + 1}</span>
             <strong>{step.label}</strong>
-            <small>{stopped ? 'Ready' : 'Gap'}</small>
+            <small>{evidenceReady ? 'Evidence ready' : 'Evidence gap'}</small>
             <div className="tag-row">
               {step.controls.slice(0, 2).map((sourceId) => (
                 <em className={verificationSummary.get(sourceId)?.effective ? 'mini-control met' : 'mini-control missing'} key={`${step.id}-${sourceId}`}>
@@ -1679,28 +1679,46 @@ function GlossaryPanel({
   query: string;
   onQueryChange: (value: string) => void;
 }) {
-  const filtered = glossary.filter((item) => `${item.term} ${item.plainEnglish} ${item.whyItMatters}`.toLowerCase().includes(query.toLowerCase()));
+  const [category, setCategory] = useState('All');
+  const categories = ['All', ...new Set(glossary.map((item) => item.category))];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = glossary
+    .filter((item) => category === 'All' || item.category === category)
+    .filter((item) => `${item.term} ${item.category} ${item.plainEnglish} ${item.whyItMatters}`.toLowerCase().includes(normalizedQuery))
+    .sort((a, b) => a.term.localeCompare(b.term));
 
   return (
     <section className="stack">
-      <div className="panel">
+      <div className="panel glossary-head">
         <div className="panel-title-row">
           <div>
             <p className="eyebrow">Glossary and help</p>
-            <h2>Plain-English definitions for technical assessment terms</h2>
+            <h2>Clear terms. Defensible decisions.</h2>
+            <p>Know what would prevent the path, what would expose it, and what remains only a lead.</p>
           </div>
-          <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search terms" />
+          <div className="glossary-tools">
+            <input aria-label="Search glossary" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search terms" />
+            <select aria-label="Glossary category" value={category} onChange={(event) => setCategory(event.target.value)}>
+              {categories.map((item) => <option key={item}>{item}</option>)}
+            </select>
+            <small>{filtered.length} of {glossary.length} terms</small>
+          </div>
         </div>
       </div>
-      <div className="help-grid">
-        {filtered.map((item) => (
-          <article className="mini-panel" key={item.term}>
-            <h3>{item.term}</h3>
-            <p>{item.plainEnglish}</p>
-            <small>{item.whyItMatters}</small>
-          </article>
-        ))}
-      </div>
+      {filtered.length > 0 ? (
+        <div className="help-grid">
+          {filtered.map((item) => (
+            <article className="mini-panel glossary-card" key={item.term}>
+              <span className="glossary-category">{item.category}</span>
+              <h3>{item.term}</h3>
+              <p>{item.plainEnglish}</p>
+              <small>{item.whyItMatters}</small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="panel empty-state"><strong>No matching term.</strong><p>Try a broader search or select All categories.</p></div>
+      )}
     </section>
   );
 }

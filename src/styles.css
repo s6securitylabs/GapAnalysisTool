@@ -776,7 +776,7 @@ small {
   color: var(--danger);
 }
 
-.status.stopped {
+.status.investigation-ready {
   border-color: #b6ddc6;
   background: linear-gradient(180deg, #f8fffb, #eef8f2);
   color: var(--success);
@@ -905,6 +905,64 @@ small {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
+.glossary-head .panel-title-row {
+  align-items: end;
+}
+
+.glossary-head h2,
+.glossary-head p,
+.glossary-card h3,
+.glossary-card p {
+  margin: 0;
+}
+
+.glossary-head p {
+  margin-top: 7px;
+  max-width: 720px;
+  color: var(--text-muted);
+}
+
+.glossary-tools {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 8px;
+  min-width: min(440px, 100%);
+}
+
+.glossary-tools small {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.glossary-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-top: 3px solid var(--accent);
+}
+
+.glossary-card > small {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.glossary-card p {
+  line-height: 1.5;
+}
+
+.glossary-category {
+  width: fit-content;
+  color: var(--accent-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .debt-card {
   border: 1px solid #ebc3bf;
   border-left: 4px solid var(--danger);
@@ -958,7 +1016,7 @@ small {
   margin: 6px 0 0;
 }
 
-.scenario-card.stopped,
+.scenario-card.investigation-ready,
 .vector-card.covered {
   border-left: 4px solid var(--success);
 }
@@ -1017,7 +1075,7 @@ small {
   animation: flowPulse 2.8s ease-in-out infinite;
 }
 
-.mini-flow-node.stopped {
+.mini-flow-node.evidence-ready {
   border-color: #badbc8;
 }
 
@@ -1255,8 +1313,19 @@ small {
 @media (max-width: 680px) {
   .metric-grid,
   .compact-metrics,
-  .form-grid {
+  .form-grid,
+  .glossary-tools {
     grid-template-columns: 1fr;
+  }
+
+  .glossary-tools {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .glossary-tools small {
+    grid-column: 1;
+    text-align: left;
   }
 
   .summary-strip {

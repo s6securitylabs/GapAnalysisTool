@@ -58,7 +58,7 @@ export interface VerificationDebtItem {
   impactCount: number;
 }
 
-export type ScenarioStatus = 'blind' | 'partial' | 'substantial' | 'stopped';
+export type ScenarioStatus = 'blind' | 'partial' | 'substantial' | 'investigation-ready';
 
 export interface ScenarioAssessment {
   status: ScenarioStatus;
@@ -225,8 +225,8 @@ export function getScenarioStatus(
 
   if (criticalEffective === scenario.criticalSources.length) {
     return {
-      status: 'stopped',
-      label: 'Stopped / investigable',
+      status: 'investigation-ready',
+      label: 'Investigation-ready',
       icon: 'OK',
       criticalEffective,
       criticalReady,

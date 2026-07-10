@@ -54,15 +54,15 @@ export function AttackChainMap({
         </span>
         <span className={`chain-readout-item chain-stop ${outcome.stopKind ?? 'open'}`}>
           {outcome.stoppedAtStageId
-            ? `Chain stops at ${outcome.stages.find((stage) => stage.stageId === outcome.stoppedAtStageId)?.stage.label}`
-            : 'Chain runs to the end of the model'}
+            ? `Strong controls would stop the chain at ${outcome.stages.find((stage) => stage.stageId === outcome.stoppedAtStageId)?.stage.label}`
+            : 'Current controls would not stop the modelled chain'}
         </span>
       </div>
 
       <details className="visual-legend attack-chain-legend" open>
         <summary>Primary view legend</summary>
         <div className="legend-grid compact-legend">
-          <div><span className="legend-swatch covered" /> Covered / stopped</div>
+          <div><span className="legend-swatch covered" /> Strong control / path would stop</div>
           <div><span className="legend-swatch unresolved" /> Gap or partial evidence</div>
           <div><span className="legend-swatch undetected" /> Undetected path</div>
           <div><span className="legend-swatch accepted-risk" /> Accepted risk, no coverage</div>
@@ -106,7 +106,7 @@ export function AttackChainMap({
                   </div>
                 </dl>
                 <span className={`posture-badge ${stage.posture}`}>{postureLabels[stage.posture]}</span>
-                {stage.halted && <span className="attack-flow-stop">Chain stops here</span>}
+                {stage.halted && <span className="attack-flow-stop">Strong controls would stop the path here</span>}
               </li>
             );
           })}
@@ -157,7 +157,7 @@ function StageHeader({ stage, reached }: { stage: StageOutcome; reached: boolean
       <p className="stage-intent">{stage.stage.intent}</p>
       {stage.halted && (
         <span className={`stop-flag ${stage.stopKind}`}>
-          {stage.stopKind === 'blocked' ? 'Attack blocked here' : 'Attack contained here'}
+          {stage.stopKind === 'blocked' ? 'Strong control would block the action here' : 'Strong containment would stop the path here'}
         </span>
       )}
       {!reached && <span className="stop-flag not-reached">Not reached in this model</span>}
