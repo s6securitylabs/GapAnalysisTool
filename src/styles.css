@@ -658,6 +658,16 @@ small {
   gap: 12px;
 }
 
+.public-release-link {
+  width: fit-content;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.public-release-link:hover {
+  color: var(--accent-strong);
+}
+
 .research-basis {
   gap: 16px;
 }

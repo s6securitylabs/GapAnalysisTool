@@ -267,6 +267,9 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('button', { name: /Risk register/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Research basis/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Definitions/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /S6 Secure Code Repository/i })).toBeInTheDocument();
+    expect(screen.getByText(/Internal \/ Partners Only/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /View public releases on GitHub/i })).toHaveAttribute('href', 'https://github.com/s6securitylabs/GapAnalysisTool');
     await userEvent.click(screen.getByRole('button', { name: /Research basis/i }));
     expect(screen.getByRole('heading', { name: /Research basis and indicator boundaries/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Insider Threat Knowledge Base/i })).toHaveAttribute('href', 'https://insiderthreat.mitre.org/');

@@ -2,7 +2,7 @@
 
 GapAnalysisTool is a static web app for mapping threat scenarios to telemetry coverage, control behaviour, evidence gaps, and remediation actions.
 
-The public mirror is `s6securitylabs/GapAnalysisTool`; the canonical internal origin is Forgejo `s6soc/GapAnalysisTool`.
+Public releases are published on [GitHub](https://github.com/s6securitylabs/GapAnalysisTool). The S6 Secure Code Repository is available for Internal / Partners Only collaboration.
 
 ## Development
 

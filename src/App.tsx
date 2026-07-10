@@ -648,6 +648,13 @@ function App() {
               </div>
             </section>
 
+            <section className="panel" aria-labelledby="source-availability-heading">
+              <p className="eyebrow">Source availability</p>
+              <h2 id="source-availability-heading">S6 Secure Code Repository</h2>
+              <p className="tight-copy"><strong>Internal / Partners Only.</strong> It is available for authorised collaboration. Public Gaps Analysis Tool releases are published on GitHub.</p>
+              <a className="public-release-link" href="https://github.com/s6securitylabs/GapAnalysisTool" target="_blank" rel="noreferrer">View public releases on GitHub</a>
+            </section>
+
             {activeReferenceView === 'Risk register' && (
               <RiskMatrixPanel
                 vectors={filteredVectors}
