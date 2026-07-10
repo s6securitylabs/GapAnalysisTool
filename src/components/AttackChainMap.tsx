@@ -59,6 +59,19 @@ export function AttackChainMap({
         </span>
       </div>
 
+      <details className="visual-legend attack-chain-legend" open>
+        <summary>2D map legend</summary>
+        <div className="legend-grid compact-legend">
+          <div><span className="legend-swatch covered" /> Covered / stopped</div>
+          <div><span className="legend-swatch unresolved" /> Gap or partial evidence</div>
+          <div><span className="legend-swatch undetected" /> Undetected path</div>
+          <div><span className="legend-swatch accepted-risk" /> Accepted risk, no coverage</div>
+          <div><span className="evidence-dot present" /> Evidence present</div>
+          <div><span className="evidence-dot partial" /> Evidence partial</div>
+          <div><span className="evidence-dot absent" /> Evidence absent</div>
+        </div>
+      </details>
+
       <figure className="attack-chain-flow" aria-labelledby={`attack-chain-caption-${scenario.id}`}>
         <figcaption id={`attack-chain-caption-${scenario.id}`}>
           <strong>Scenario path: {scenario.title}</strong>

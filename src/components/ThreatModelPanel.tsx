@@ -66,33 +66,38 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
         </div>
       </div>
 
-      <div className="scenario-switch" role="group" aria-label="Threat scenario">
-        {threatModel.scenarios.map((item) => (
-          <button
-            key={item.id}
-            className={`scenario-chip ${item.kind} ${item.id === scenario.id ? 'active' : ''}`}
-            aria-pressed={item.id === scenario.id}
-            onClick={() => setScenarioId(item.id)}
-          >
-            <span className={`kind-tag ${item.kind}`}>{item.kind === 'internal' ? 'Internal' : 'Cyber'}</span>
-            <strong>{item.title}</strong>
-            <span className="scenario-themes">{item.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</span>
-          </button>
-        ))}
+      <div className="scenario-picker-shell">
+        <label className="scenario-picker">
+          <span>Threat scenario</span>
+          <select value={scenario.id} onChange={(event) => setScenarioId(event.target.value)}>
+            {threatModel.scenarios.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.kind === 'internal' ? 'Internal' : 'Cyber'} — {item.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="scenario-selection-summary" aria-live="polite">
+          <span className={`kind-tag ${scenario.kind}`}>{scenario.kind === 'internal' ? 'Internal' : 'Cyber'}</span>
+          <strong>{scenario.title}</strong>
+          <small>{scenario.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</small>
+        </div>
+        <span className="pill info-pill">{threatModel.scenarios.length} curated scenarios</span>
       </div>
 
-      <div className="scenario-brief">
-        <p>
-          <strong>Objective.</strong> {scenario.objective}
-        </p>
-        <p>{scenario.summary}</p>
-        <p className="scenario-theme-line"><strong>Coverage themes.</strong> {scenario.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</p>
-        <div className="button-row">
+      <div className="scenario-brief compact-brief">
+        <div>
+          <p>
+            <strong>Objective.</strong> {scenario.objective}
+          </p>
+          <p>{scenario.summary}</p>
+        </div>
+        <div className="scenario-actions">
           <button onClick={() => downloadJson(`threat-model-${scenario.id}.json`, serializeScenario(scenario))}>
-            Export threat model (JSON)
+            Export JSON
           </button>
           <span className="pill info-pill">
-            {outcome.coveredStages}/{outcome.inPathStages} in-path stages covered · {outcome.acceptedRiskStages} accepted risk contributes no coverage
+            {outcome.coveredStages}/{outcome.inPathStages} stages covered · {outcome.acceptedRiskStages} accepted risk
           </span>
         </div>
       </div>
@@ -100,30 +105,33 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
       {/* Keying the scene on the scenario resets clock, camera, and buffers on every switch. */}
       {mode === '2d' ? <AttackChainMap scenario={scenario} sourceById={sourceById} /> : <ThreatSimulation key={scenario.id} scenario={scenario} />}
 
-      <div className="model-legend">
-        <div>
-          <strong>Gap types</strong>
-          <ul>
-            {gapTypes.map((type) => (
-              <li key={type}>
-                <span className={`gap-chip ${type}`}>{gapTypeLabels[type]}</span>
-                <em>{gapTypeMeanings[type]}</em>
-              </li>
-            ))}
-          </ul>
+      <details className="model-legend visual-legend">
+        <summary>Gap and control taxonomy legend</summary>
+        <div className="legend-panel-grid">
+          <div>
+            <strong>Gap types</strong>
+            <ul>
+              {gapTypes.map((type) => (
+                <li key={type}>
+                  <span className={`gap-chip ${type}`}>{gapTypeLabels[type]}</span>
+                  <em>{gapTypeMeanings[type]}</em>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <strong>What a control actually does</strong>
+            <ul>
+              {controlEffects.map((effect) => (
+                <li key={effect}>
+                  <span className={`effect-chip ${effect} holds`}>{controlEffectLabels[effect]}</span>
+                  <em>{controlEffectMeanings[effect]}</em>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div>
-          <strong>What a control actually does</strong>
-          <ul>
-            {controlEffects.map((effect) => (
-              <li key={effect}>
-                <span className={`effect-chip ${effect} holds`}>{controlEffectLabels[effect]}</span>
-                <em>{controlEffectMeanings[effect]}</em>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      </details>
     </section>
   );
 }

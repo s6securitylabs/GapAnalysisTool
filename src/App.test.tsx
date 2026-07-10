@@ -115,6 +115,8 @@ describe('App integrated assessment experience', () => {
     expect(within(flow).getAllByText('Actor')).toHaveLength(6);
     expect(within(flow).getByText('Defender')).toBeInTheDocument();
     expect(within(flow).getAllByText(/ready/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('2D map legend')).toBeInTheDocument();
+    expect(screen.getByText(/Evidence partial/i)).toBeInTheDocument();
   });
 
   it('keeps accepted risk visible as a gap that contributes no coverage', async () => {
@@ -122,7 +124,8 @@ describe('App integrated assessment experience', () => {
     const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling Scenarios/i }));
 
-    expect(screen.getAllByText(/accepted risk contributes no coverage/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/accepted risk/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Accepted risk, no coverage/i)).toBeInTheDocument();
     expect(screen.getByText(/never counted as covered/i)).toBeInTheDocument();
     expect(screen.getByText(/It stays visible, stays neutral, and never renders as covered\./i)).toBeInTheDocument();
   });
@@ -149,19 +152,23 @@ describe('App integrated assessment experience', () => {
     expect(within(notice).getByText(/Try the 3D Threat Simulation in a modern browser with hardware acceleration and WebGL enabled/i)).toBeInTheDocument();
     expect(within(notice).getByText(/switch back to the 2D Attack Chain Map above/i)).toBeInTheDocument();
     expect(within(notice).getByText(/The 2D map is the authoritative view/i)).toBeInTheDocument();
+    expect(screen.getByText('3D simulation legend')).toBeInTheDocument();
+    expect(screen.getByText(/Lit telemetry\/evidence beam/i)).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Flat simulation of/i })).toBeInTheDocument();
   });
 
-  it('switches between internal and external cyber scenarios in the same model', async () => {
+  it('uses a compact scenario selector instead of a large grid of scenario buttons', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling Scenarios/i }));
 
-    const scenarioSwitch = screen.getByRole('group', { name: /Threat scenario/i });
-    expect(within(scenarioSwitch).getAllByText('Internal').length).toBeGreaterThan(0);
-    expect(within(scenarioSwitch).getAllByText('Cyber').length).toBeGreaterThan(0);
+    const scenarioSelect = screen.getByRole('combobox', { name: /Threat scenario/i });
+    expect(screen.queryByRole('group', { name: /Threat scenario/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/7 curated scenarios/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Internal/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/data exfiltration/i)).toBeInTheDocument();
 
-    await userEvent.click(within(scenarioSwitch).getByRole('button', { name: /External phishing to ransomware staging/i }));
+    await userEvent.selectOptions(scenarioSelect, 'cyber-phishing-to-ransomware');
     expect(screen.getByText(/Convert one stolen session into estate-wide encryption/i)).toBeInTheDocument();
   });
 

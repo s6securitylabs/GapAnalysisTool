@@ -535,6 +535,8 @@ export function ThreatSimulation({ scenario }: { scenario: ThreatScenario }) {
         )}
       </div>
 
+      <SimulationLegend />
+
       <ol className="sim-timeline" aria-label="Simulation timeline">
         {events.map((event, index) => (
           <li key={event.stageId} className={`sim-step ${event.posture} ${index === activeIndex ? 'active' : ''}`}>
@@ -652,6 +654,22 @@ function ThreatSceneOverlay({ events, activeIndex }: { events: SimulationEvent[]
   );
 }
 
+function SimulationLegend() {
+  return (
+    <details className="visual-legend simulation-legend" open>
+      <summary>3D simulation legend</summary>
+      <div className="legend-grid compact-legend">
+        <div><span className="legend-swatch actor" /> Moving actor / active stage</div>
+        <div><span className="legend-swatch telemetry" /> Lit telemetry/evidence beam</div>
+        <div><span className="legend-swatch blind" /> Blind or unlit stage</div>
+        <div><span className="legend-swatch blocked" /> Block or containment stops path</div>
+        <div><span className="legend-swatch delay" /> Delay/friction, not a stop</div>
+        <div><span className="legend-swatch accepted-risk" /> Accepted risk, no coverage</div>
+      </div>
+    </details>
+  );
+}
+
 /**
  * Progressive fallback. No WebGL, no loss of meaning: the same timeline, drawn flat, with an
  * explicit pointer back to the authoritative view.
@@ -669,6 +687,8 @@ function SimulationFallback({ scenario, events }: { scenario: ThreatScenario; ev
           map is the authoritative view and holds the same threat model.
         </p>
       </div>
+
+      <SimulationLegend />
 
       <svg className="sim-fallback-chain" viewBox={`0 0 ${width * events.length} 120`} role="img" aria-label={`Flat simulation of ${scenario.title}`}>
         <line x1={40} y1={60} x2={width * events.length - 40} y2={60} className="fallback-rail" />

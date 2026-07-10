@@ -1226,27 +1226,58 @@ small {
   box-shadow: 0 1px 2px rgba(19, 42, 68, 0.12);
 }
 
-.scenario-switch {
+.scenario-picker-shell {
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.scenario-chip {
-  display: grid;
-  gap: 6px;
-  justify-items: start;
-  text-align: left;
+  gap: 10px;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1fr) auto;
+  align-items: end;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--panel-muted);
-  cursor: pointer;
 }
 
-.scenario-chip.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.scenario-picker {
+  display: grid;
+  gap: 5px;
+}
+
+.scenario-picker span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.scenario-picker select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 38px 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--panel);
+  font-weight: 700;
+}
+
+.scenario-selection-summary {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.scenario-selection-summary strong,
+.scenario-selection-summary small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-selection-summary small {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  text-transform: capitalize;
 }
 
 .scenario-themes,
@@ -1283,6 +1314,18 @@ small {
   border-left: 3px solid var(--accent);
   border-radius: 12px;
   background: var(--panel-muted);
+}
+
+.scenario-brief.compact-brief {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.scenario-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .scenario-brief p {
@@ -1775,13 +1818,78 @@ small {
 }
 
 .model-legend {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--panel-muted);
+}
+
+.legend-panel-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 10px;
+}
+
+.visual-legend {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-muted);
+}
+
+.visual-legend summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.attack-chain-legend,
+.simulation-legend {
+  padding: 8px 10px;
+}
+
+.legend-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.legend-grid div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.legend-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel);
+}
+
+.legend-swatch.covered,
+.legend-swatch.blocked {
+  background: var(--success);
+}
+.legend-swatch.unresolved,
+.legend-swatch.delay {
+  background: var(--warning);
+}
+.legend-swatch.undetected,
+.legend-swatch.actor {
+  background: var(--danger);
+}
+.legend-swatch.accepted-risk,
+.legend-swatch.blind {
+  background: #64748b;
+}
+.legend-swatch.telemetry {
+  background: var(--info);
 }
 
 .model-legend ul {
@@ -2202,6 +2310,15 @@ small {
 }
 
 @media (max-width: 900px) {
+  .scenario-picker-shell,
+  .scenario-brief.compact-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .scenario-actions {
+    justify-content: flex-start;
+  }
+
   .chain-grid {
     grid-template-columns: 92px repeat(var(--stage-count), minmax(196px, 1fr));
   }
@@ -2213,7 +2330,7 @@ small {
 
 @media print {
   .mode-switch,
-  .scenario-switch,
+  .scenario-picker-shell,
   .sim-controls,
   .sim-hint,
   .threat-simulation .sim-stage {
