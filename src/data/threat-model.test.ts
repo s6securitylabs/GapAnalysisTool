@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { catalogue } from './catalogue';
-import { attackChainStages, gapTypeLabels, threatModel, type GapType } from './threat-model';
+import { attackChainStages, gapTypeLabels, threatModel, type GapType, type ThreatScenarioTheme } from './threat-model';
 
 const CANONICAL_CHAIN = ['Preparation', 'Access', 'Misuse', 'Collection', 'Exfiltration', 'Concealment', 'Response'];
 
@@ -16,6 +16,24 @@ describe('canonical threat model', () => {
     expect(kinds).toEqual(new Set(['internal', 'cyber']));
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal').length).toBeGreaterThan(0);
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'cyber').length).toBeGreaterThan(0);
+    expect(threatModel.scenarios.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('covers the required insider, third-party, cloud, ransomware, and engineering themes', () => {
+    const requiredThemes: ThreatScenarioTheme[] = [
+      'insider-misuse',
+      'privileged-admin',
+      'data-exfiltration',
+      'sabotage',
+      'credential-misuse',
+      'third-party',
+      'ransomware',
+      'cloud-saas',
+      'detection-response',
+    ];
+    const seen = new Set(threatModel.scenarios.flatMap((scenario) => scenario.themes));
+    expect(seen).toEqual(new Set(requiredThemes));
+    for (const scenario of threatModel.scenarios) expect(scenario.themes.length).toBeGreaterThan(0);
   });
 
   it('models every scenario across every stage of the chain exactly once', () => {
@@ -23,6 +41,14 @@ describe('canonical threat model', () => {
       const ids = scenario.stages.map((stage) => stage.stageId);
       expect(new Set(ids).size).toBe(ids.length);
       expect([...ids].sort()).toEqual([...attackChainStages.map((stage) => stage.id)].sort());
+      for (const stage of scenario.stages) {
+        expect(stage.action.summary.trim()).not.toBe('');
+        expect(stage.action.detail.trim()).not.toBe('');
+        if (stage.actorPresent !== false) {
+          expect(stage.evidence.length).toBeGreaterThan(0);
+          expect(stage.controls.length).toBeGreaterThan(0);
+        }
+      }
     }
   });
 

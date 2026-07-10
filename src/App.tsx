@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { ThreatModelPanel } from './components/ThreatModelPanel';
 import { catalogue, type ThreatScenario, type LogSource, type LogSourceId } from './data/catalogue';
 import { glossary } from './data/glossary';
@@ -45,6 +45,7 @@ const primaryViews = [
   { id: 'Scenarios', label: 'Threat Modelling Scenarios', hint: 'Curated scenario-readiness review across threat-scenario flows.' },
   { id: 'Gaps', label: 'Gaps', hint: 'Prioritize remediation owners, dates, and open debt.' },
   { id: 'Report', label: 'Report', hint: 'Export, save, import, and compare in the report hub.' },
+  { id: 'References', label: 'References', hint: 'Use supporting views, definitions, catalogue notes, and handling boundaries.' },
 ] as const;
 type PrimaryView = (typeof primaryViews)[number]['id'];
 
@@ -54,10 +55,10 @@ const secondaryViews = [
   { id: 'Catalogue Notes', label: 'Catalogue Notes' },
 ] as const;
 type SecondaryView = (typeof secondaryViews)[number]['id'];
-type AppView = PrimaryView | SecondaryView;
 
 function App() {
-  const [activeView, setActiveView] = useState<AppView>('Overview');
+  const [activeView, setActiveView] = useState<PrimaryView>('Overview');
+  const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk Matrix');
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('demo');
   const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('demo'));
   const [remediationState, setRemediationState] = useState<RemediationState>(() => createInitialRemediationState());
@@ -119,7 +120,7 @@ function App() {
   );
   const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId);
   const activePrimaryIndex = primaryViews.findIndex((view) => view.id === activeView);
-  const activePrimary = activePrimaryIndex >= 0 ? primaryViews[activePrimaryIndex] : null;
+  const activePrimary = primaryViews[activePrimaryIndex];
   const scenarioStatuses = useMemo(
     () => catalogue.threatScenarios.map((scenario) => ({ scenario, status: getScenarioStatus(scenario, verificationSummary) })),
     [verificationSummary],
@@ -156,6 +157,23 @@ function App() {
 
   function updateMetadata<K extends keyof AssessmentMetadata>(key: K, value: AssessmentMetadata[K]) {
     setMetadata((current) => ({ ...current, [key]: value }));
+  }
+
+  function handleWorkflowKeyDown(event: KeyboardEvent<HTMLOListElement>) {
+    const nextIndex =
+      event.key === 'ArrowRight' || event.key === 'ArrowDown'
+        ? Math.min(activePrimaryIndex + 1, primaryViews.length - 1)
+        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+          ? Math.max(activePrimaryIndex - 1, 0)
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? primaryViews.length - 1
+              : -1;
+    if (nextIndex < 0 || nextIndex === activePrimaryIndex) return;
+    event.preventDefault();
+    setActiveView(primaryViews[nextIndex].id);
+    requestAnimationFrame(() => document.getElementById(`workflow-step-${nextIndex + 1}`)?.focus());
   }
 
   function setMode(nextMode: AssessmentMode) {
@@ -380,7 +398,7 @@ function App() {
         <div className={`hero-score compact-score ${executiveReport.rag}`}>
           <span>{assessmentMode === 'demo' ? 'Seeded workshop readiness' : 'Current verified readiness'}</span>
           <strong>{formatPercent(summary.overallScore)}</strong>
-          <small>{activePrimary ? `Step ${activePrimaryIndex + 1} of ${primaryViews.length}: ${activePrimary.label}` : 'Reference view open'}</small>
+          <small>{`Step ${activePrimaryIndex + 1} of ${primaryViews.length}: ${activePrimary.label}`}</small>
         </div>
       </header>
 
@@ -427,21 +445,32 @@ function App() {
             <p className="eyebrow">Primary workflow</p>
             <h2>Work the assessment in order. Reference views stay off the main path.</h2>
           </div>
-          <span className="pill info-pill">{activePrimary ? `Current step ${activePrimaryIndex + 1}/${primaryViews.length}` : 'Reference view'}</span>
+          <span className="pill info-pill">{`Current step ${activePrimaryIndex + 1}/${primaryViews.length}`}</span>
         </div>
-        <nav className="workflow-grid" aria-label="Primary workflow">
-          {primaryViews.map((view) => (
-            <button
-              key={view.id}
-              className={`workflow-button ${activeView === view.id ? 'active' : ''}`}
-              aria-label={view.label}
-              aria-pressed={activeView === view.id}
-              onClick={() => setActiveView(view.id)}
-            >
-              <strong>{view.label}</strong>
-              <small>{view.hint}</small>
-            </button>
-          ))}
+        <nav aria-label="Primary workflow">
+          <ol className="workflow-grid" onKeyDown={handleWorkflowKeyDown}>
+            {primaryViews.map((view, index) => {
+              const state = index < activePrimaryIndex ? 'complete' : index === activePrimaryIndex ? 'current' : index === activePrimaryIndex + 1 ? 'next' : 'upcoming';
+              return (
+                <li className={`workflow-step ${state}`} key={view.id}>
+                  <button
+                    id={`workflow-step-${index + 1}`}
+                    className={`workflow-button ${activeView === view.id ? 'active' : ''}`}
+                    aria-label={`${view.label}, step ${index + 1} of ${primaryViews.length}, ${state}`}
+                    aria-current={activeView === view.id ? 'step' : undefined}
+                    onClick={() => setActiveView(view.id)}
+                  >
+                    <span className="workflow-step-head">
+                      <span className="workflow-number" aria-hidden="true">{index < activePrimaryIndex ? '✓' : index + 1}</span>
+                      <span className="workflow-state">{state === 'complete' ? 'Complete' : state === 'current' ? 'Current' : state === 'next' ? 'Next' : 'Upcoming'}</span>
+                    </span>
+                    <strong>{view.label}</strong>
+                    <small>{view.hint}</small>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         </nav>
       </section>
 
@@ -501,20 +530,6 @@ function App() {
           />
         )}
 
-        {activeView === 'Risk Matrix' && (
-          <RiskMatrixPanel
-            vectors={filteredVectors}
-            domainFilter={domainFilter}
-            domains={domains}
-            gapsOnly={gapsOnly}
-            query={query}
-            sourceById={sourceById}
-            onDomainChange={setDomainFilter}
-            onGapsOnlyChange={setGapsOnly}
-            onQueryChange={setQuery}
-          />
-        )}
-
         {activeView === 'Gaps' && (
           <GapAnalysisPanel
             summary={summary}
@@ -541,38 +556,56 @@ function App() {
           />
         )}
 
-        {activeView === 'Glossary' && (
-          <GlossaryPanel query={glossaryQuery} onQueryChange={setGlossaryQuery} />
+        {activeView === 'References' && (
+          <section className="stack" aria-labelledby="references-heading">
+            <section className="panel reference-hub">
+              <div>
+                <p className="eyebrow">Final step · References</p>
+                <h2 id="references-heading">Supporting views and assessment boundaries</h2>
+                <p className="tight-copy">Use these materials after the working assessment. They are intentionally kept out of the ordered evidence and remediation flow.</p>
+              </div>
+              <div className="button-row" role="group" aria-label="Reference views">
+                {secondaryViews.map((view) => (
+                  <button key={view.id} className={activeReferenceView === view.id ? 'active' : ''} aria-pressed={activeReferenceView === view.id} onClick={() => setActiveReferenceView(view.id)}>
+                    {view.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {activeReferenceView === 'Risk Matrix' && (
+              <RiskMatrixPanel
+                vectors={filteredVectors}
+                domainFilter={domainFilter}
+                domains={domains}
+                gapsOnly={gapsOnly}
+                query={query}
+                sourceById={sourceById}
+                onDomainChange={setDomainFilter}
+                onGapsOnlyChange={setGapsOnly}
+                onQueryChange={setQuery}
+              />
+            )}
+            {activeReferenceView === 'Glossary' && <GlossaryPanel query={glossaryQuery} onQueryChange={setGlossaryQuery} />}
+            {activeReferenceView === 'Catalogue Notes' && <CatalogueNotes />}
+
+            <section className="panel trust-boundary">
+              <div>
+                <p className="eyebrow">Trust boundary</p>
+                <p className="tight-copy">Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing.</p>
+              </div>
+              <details>
+                <summary>Handling caveats</summary>
+                <ul className="prose-list">
+                  <li>This app visualizes investigation readiness, gap priority, and scenario coverage from positively verified evidence.</li>
+                  <li>It does not replace SIEM, EDR, DLP, case-management, or analyst judgment.</li>
+                  <li>Communications, workforce, physical access, and behavioral context require minimum-necessary access, approval, and corroboration.</li>
+                </ul>
+              </details>
+            </section>
+          </section>
         )}
-
-        {activeView === 'Catalogue Notes' && <CatalogueNotes />}
       </main>
-
-      <section className="panel secondary-shelf" aria-label="Reference views">
-        <span className="shelf-label">Reference views</span>
-        <div className="button-row">
-          {secondaryViews.map((view) => (
-            <button key={view.id} className={activeView === view.id ? 'active' : ''} aria-pressed={activeView === view.id} onClick={() => setActiveView(view.id)}>
-              {view.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel trust-boundary">
-        <div>
-          <p className="eyebrow">Trust boundary</p>
-          <p className="tight-copy">Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing.</p>
-        </div>
-        <details>
-          <summary>Handling caveats</summary>
-          <ul className="prose-list">
-            <li>This app visualizes investigation readiness, gap priority, and scenario coverage from positively verified evidence.</li>
-            <li>It does not replace SIEM, EDR, DLP, HR case-management, or analyst judgment.</li>
-            <li>Email, HR/case, physical access, and behavioral context require minimum-necessary access, approval, and corroboration.</li>
-          </ul>
-        </details>
-      </section>
 
       <input ref={importRef} type="file" accept="application/json" className="hidden-input" onChange={handleImportSnapshot} />
     </div>
@@ -967,9 +1000,21 @@ function VerificationWorkspace({
                   ))}
                 </div>
               </details>
-              <details className="mapped-vector-detail">
-                <summary>Privacy and remediation guidance</summary>
+              <details className="mapped-vector-detail" open>
+                <summary>Why this log source matters, impact, and handling guidance</summary>
                 <div className="compact-list">
+                  <div className="list-card impact-card positive-impact">
+                    <strong>Why we want it</strong>
+                    <small>{metadata.whyCollect}</small>
+                  </div>
+                  <div className="list-card impact-card positive-impact">
+                    <strong>Positive impact</strong>
+                    <small>{metadata.positiveImpact}</small>
+                  </div>
+                  <div className="list-card impact-card negative-impact">
+                    <strong>Negative impact / caveat</strong>
+                    <small>{metadata.negativeImpact}</small>
+                  </div>
                   {metadata.privacyNotes.map((note) => (
                     <div className="list-card" key={`${source.id}-${note}`}>
                       <small>{note}</small>
@@ -1339,6 +1384,18 @@ function GapAnalysisPanel({
                 Impacts {item.count} mapped vectors · weighted gap {item.weightedGap.toFixed(2)}
               </p>
               <div className="compact-list">
+                <div className="list-card impact-card positive-impact">
+                  <strong>Why we want it</strong>
+                  <small>{metadata.whyCollect}</small>
+                </div>
+                <div className="list-card impact-card positive-impact">
+                  <strong>Positive impact</strong>
+                  <small>{metadata.positiveImpact}</small>
+                </div>
+                <div className="list-card impact-card negative-impact">
+                  <strong>Negative impact / caveat</strong>
+                  <small>{metadata.negativeImpact}</small>
+                </div>
                 {metadata.privacyNotes.map((note) => (
                   <div className="list-card" key={`${item.sourceId}-${note}`}>
                     <small>{note}</small>

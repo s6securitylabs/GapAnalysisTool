@@ -12,12 +12,15 @@ Use the tool to turn threat-scenario and telemetry-readiness findings into an ac
 
 ## Workflow
 
-1. Define the assessment scope, accountable owner, handling constraints, and any exclusions.
-2. Verify each evidence source. Record maturity separately from the individual critical checks; collection alone does not establish readiness.
-3. Review scenario and attack-chain views to understand where evidence or control behaviour changes the outcome.
-4. Work the prioritized gap register. Replace the seeded guidance with actual owners, dates, use-case mappings, validation methods, and evidence references.
-5. Export a Markdown summary for governance and a CSV register for engineering handoff. Save or export a JSON snapshot when a point-in-time baseline is needed.
-6. Reassess after validation and compare against the saved baseline.
+Follow the numbered UI progression from left to right:
+
+1. **Overview:** name the assessment, assign its owner, and review the current readiness summary.
+2. **Scope:** confirm handling constraints, in-scope evidence domains, and exclusions.
+3. **Source Readiness:** verify each evidence source. Record maturity separately from individual critical checks; collection alone does not establish readiness. For every source, review why the log is wanted, what positive investigation or SOC-engineering impact it provides, and what negative impact, privacy/cost caveat, or false-confidence risk it introduces.
+4. **Threat Modelling Scenarios:** review the directional 2D attack chain and its detailed lanes to understand where evidence or control behaviour changes the outcome. The 3D view is optional.
+5. **Gaps:** work the prioritized register. Replace seeded guidance with actual owners, dates, use-case mappings, validation methods, and evidence references.
+6. **Report:** export a Markdown summary and CSV engineering register. Save or export a JSON snapshot when a point-in-time baseline is needed, then compare after reassessment.
+7. **References:** consult the risk matrix, glossary, catalogue notes, trust boundary, and handling caveats after the working assessment.
 
 ## Remediation lifecycle
 
@@ -33,6 +36,12 @@ Use the tool to turn threat-scenario and telemetry-readiness findings into an ac
 Target date and SLA serve different purposes: the date is the current delivery commitment; SLA days expresses the expected service level and remains useful when the assessment is copied or dates are reset.
 
 ## Evidence and validation
+
+Log rationale is part of validation, not decoration. A source should stay below investigation-ready until the reviewer can explain:
+
+- **Why we want it:** which question the evidence answers and what other source it corroborates.
+- **Positive impact:** what containment, triage, remediation, engineering, or governance decision improves when the log is reliable.
+- **Negative impact / caveat:** privacy exposure, licensing or storage cost, noise, false-positive burden, missing-channel risk, or false confidence created by weak attribution.
 
 An evidence reference should point to a durable record without embedding sensitive content in this static app. Suitable references include a ticket, approved test run, saved query, dashboard, runbook exercise, replay result, or evidence-package identifier.
 

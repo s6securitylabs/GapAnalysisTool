@@ -25,6 +25,16 @@ export type AttackChainStageId =
   | 'response';
 
 export type ScenarioKind = 'internal' | 'cyber';
+export type ThreatScenarioTheme =
+  | 'insider-misuse'
+  | 'privileged-admin'
+  | 'data-exfiltration'
+  | 'sabotage'
+  | 'credential-misuse'
+  | 'third-party'
+  | 'ransomware'
+  | 'cloud-saas'
+  | 'detection-response';
 
 /**
  * Accepted gap taxonomy. Accepted risk is a gap: it stays visible, stays grey, and
@@ -114,6 +124,7 @@ export interface ThreatScenario {
   actor: string;
   objective: string;
   summary: string;
+  themes: ThreatScenarioTheme[];
   stages: ScenarioStage[];
 }
 
@@ -185,6 +196,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
   objective: 'Take customer records and pricing material out of the estate before the last working day.',
   summary:
     'The workforce event is known to HR before it is known to security. Access stays legitimate throughout, so every stage turns on whether the evidence separates ordinary work from collection and transfer.',
+  themes: ['insider-misuse', 'data-exfiltration'],
   stages: [
     {
       stageId: 'preparation',
@@ -375,6 +387,7 @@ const internalPrivilegedSabotage: ThreatScenario = {
   objective: 'Delete production configuration and disrupt a service during a period when change is supposed to be frozen.',
   summary:
     'Privilege is real and approved. The question is not whether the actor could act, but whether the estate can tie each privileged action to an approval and stop it before impact lands.',
+  themes: ['insider-misuse', 'privileged-admin', 'sabotage', 'detection-response'],
   stages: [
     {
       stageId: 'preparation',
@@ -527,6 +540,7 @@ const cyberPhishingToRansomware: ThreatScenario = {
   objective: 'Convert one stolen session into estate-wide encryption, after first destroying the backups.',
   summary:
     'An external chain that reaches deep because the identity layer is strong and the endpoint layer is not. Two stages hold; the middle of the chain is an unlit zone.',
+  themes: ['credential-misuse', 'ransomware', 'detection-response'],
   stages: [
     {
       stageId: 'preparation',
@@ -721,6 +735,7 @@ const cyberSaasTokenTheft: ThreatScenario = {
   objective: 'Hold long-lived delegated access to mail and files without ever handling a password.',
   summary:
     'Nothing is compromised in the usual sense. A user grants consent, and the resulting token outlives every password reset the estate can perform.',
+  themes: ['credential-misuse', 'cloud-saas', 'data-exfiltration', 'detection-response'],
   stages: [
     {
       stageId: 'preparation',
@@ -910,8 +925,141 @@ const cyberSaasTokenTheft: ThreatScenario = {
   ],
 };
 
+interface CuratedStageSpec {
+  action: string;
+  detail: string;
+  sourceId: LogSourceId;
+  signal: string;
+  evidenceStatus: EvidenceStatus;
+  gapType?: GapType;
+  severity?: Severity;
+  controlEffect?: ControlEffect;
+  controlOutcome?: ControlOutcome;
+  actorPresent?: boolean;
+}
+
+interface CuratedScenarioSpec extends Omit<ThreatScenario, 'stages'> {
+  stages: Record<AttackChainStageId, CuratedStageSpec>;
+}
+
+/**
+ * Keeps additional workshop scenarios concise without weakening the canonical model: every
+ * generated scenario still carries all seven stages, explicit evidence health, a named
+ * control outcome, typed gaps, and linked remediation.
+ */
+function createCuratedScenario(spec: CuratedScenarioSpec): ThreatScenario {
+  return {
+    ...spec,
+    stages: attackChainStages.map((stage): ScenarioStage => {
+      const item = spec.stages[stage.id];
+      const actorPresent = item.actorPresent ?? true;
+      const gapId = `${spec.id}-${stage.id}-gap`;
+      const gap = item.gapType
+        ? {
+            id: gapId,
+            type: item.gapType,
+            severity: item.severity ?? 'high',
+            confidence: 'high' as const,
+            statement: `${item.signal} is not sufficiently ready for this stage.`,
+            consequence: `The ${stage.label.toLowerCase()} activity may not be detected, explained, or contained with defensible evidence.`,
+          }
+        : null;
+      const controlEffect = item.controlEffect ?? (stage.id === 'response' ? 'contain' : 'detect');
+      const controlOutcome = item.controlOutcome ?? (gap ? 'partial' : 'holds');
+
+      return {
+        stageId: stage.id,
+        actorPresent,
+        action: { summary: item.action, detail: item.detail },
+        evidence: actorPresent
+          ? [{ sourceId: item.sourceId, signal: item.signal, requiredFields: ['actor', 'target', 'timestamp', 'result'], status: item.evidenceStatus }]
+          : [],
+        controls: actorPresent
+          ? [{
+              id: `${spec.id}-${stage.id}-control`,
+              name: `${stage.label} readiness control`,
+              effect: controlEffect,
+              outcome: controlOutcome,
+              confidence: item.evidenceStatus === 'present' ? 'high' : 'medium',
+              note: gap ? 'The control exists but its evidence or operating path is incomplete.' : 'The control has usable evidence and a defined operating path.',
+            }]
+          : [],
+        gaps: gap ? [gap] : [],
+        remediation:
+          gap && gap.type !== 'accepted-risk'
+            ? [{
+                id: `${spec.id}-${stage.id}-remediation`,
+                action: `Close the ${gap.type} gap for ${item.signal.toLowerCase()} and validate the result in a scenario exercise.`,
+                owner: gap.type === 'response' ? 'Incident response' : 'Detection engineering',
+                targetDate: '2026-12-15',
+                effort: 'medium',
+                gapIds: [gapId],
+              }]
+            : [],
+      };
+    }),
+  };
+}
+
+const thirdPartyCloudExport = createCuratedScenario({
+  id: 'third-party-cloud-export',
+  kind: 'internal',
+  title: 'Contractor cloud export after engagement end',
+  actor: 'Third-party specialist whose federated account and project workspace remain active after the engagement ends.',
+  objective: 'Export project data through an approved SaaS interface after the contractual access window closes.',
+  summary: 'This scenario tests third-party lifecycle ownership, federated identity correlation, SaaS export fidelity, external sharing, and timely containment.',
+  themes: ['third-party', 'credential-misuse', 'cloud-saas', 'data-exfiltration', 'detection-response'],
+  stages: {
+    preparation: { action: 'Engagement ends without an access trigger', detail: 'The supplier record closes, but no identity workflow receives the effective end date.', sourceId: 'hr-case', signal: 'Third-party end date and sponsor', evidenceStatus: 'absent', gapType: 'telemetry' },
+    access: { action: 'Federated account starts a new session', detail: 'The external identity still satisfies the application access policy.', sourceId: 'idp-auth', signal: 'Federated sign-in, sponsor, and device context', evidenceStatus: 'present' },
+    misuse: { action: 'Project permissions are used outside the agreed window', detail: 'Valid workspace access is used after the approved delivery period.', sourceId: 'saas-audit', signal: 'Workspace role and object access', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Workspace records are exported in bulk', detail: 'The actor uses a native bulk export that resembles ordinary project closeout.', sourceId: 'saas-audit', signal: 'Bulk export with object and byte counts', evidenceStatus: 'present' },
+    exfiltration: { action: 'Export is shared to an external cloud account', detail: 'A public-safe sharing feature moves the archive outside the managed workspace.', sourceId: 'cloud-storage', signal: 'External share destination and object classification', evidenceStatus: 'partial', gapType: 'detection' },
+    concealment: { action: 'Workspace membership is removed', detail: 'The actor removes their visible workspace membership after the export.', sourceId: 'saas-audit', signal: 'Membership and permission change history', evidenceStatus: 'present' },
+    response: { action: 'Sponsor and security teams coordinate revocation', detail: 'Identity, SaaS sessions, and external links must be revoked under one owner.', sourceId: 'siem-enrichment', signal: 'Case ownership and revocation evidence', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const breakGlassCredentialMisuse = createCuratedScenario({
+  id: 'break-glass-credential-misuse',
+  kind: 'internal',
+  title: 'Emergency administrator credential misuse',
+  actor: 'Operator using a shared emergency credential without a corresponding incident or approved change.',
+  objective: 'Change production access controls and weaken recovery safeguards outside change control.',
+  summary: 'This scenario separates emergency access from approved work and tests vault attribution, command evidence, change correlation, sabotage detection, and recovery ownership.',
+  themes: ['insider-misuse', 'privileged-admin', 'credential-misuse', 'sabotage', 'detection-response'],
+  stages: {
+    preparation: { action: 'Emergency credential is checked out without a ticket', detail: 'The vault permits access using a generic justification.', sourceId: 'privileged-admin', signal: 'Vault checkout, approver, and ticket reference', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Shared administrator session reaches production', detail: 'The target records the emergency identity but not the human operator.', sourceId: 'privileged-admin', signal: 'Human-to-shared-account session attribution', evidenceStatus: 'absent', gapType: 'telemetry' },
+    misuse: { action: 'Access policy and recovery settings are changed', detail: 'The session expands privilege and reduces recovery safeguards.', sourceId: 'privileged-admin', signal: 'Privileged commands and before/after configuration', evidenceStatus: 'present' },
+    collection: { action: 'Configuration and secrets inventory is queried', detail: 'The session enumerates service identities and recovery material.', sourceId: 'cloud-storage', signal: 'Sensitive configuration reads', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'No data-transfer action is modelled', detail: 'The objective is sabotage and persistence, not data movement.', sourceId: 'proxy-dns', signal: 'Outbound transfer evidence', evidenceStatus: 'present', actorPresent: false },
+    concealment: { action: 'Audit retention is shortened', detail: 'The same session changes the evidence window before ending.', sourceId: 'siem-enrichment', signal: 'Retention and source-health change alert', evidenceStatus: 'partial', gapType: 'detection' },
+    response: { action: 'Emergency access is rotated and changes are restored', detail: 'Containment requires credential rotation, configuration recovery, and accountable review.', sourceId: 'privileged-admin', signal: 'Credential rotation and recovery validation', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const detectionPipelineSuppression = createCuratedScenario({
+  id: 'detection-pipeline-suppression',
+  kind: 'cyber',
+  title: 'Staged attacker suppresses cloud detection coverage',
+  actor: 'External actor using a compromised automation identity with permission to change cloud logging and alert routing.',
+  objective: 'Create a quiet window for destructive changes by suppressing audit delivery and response notifications.',
+  summary: 'This scenario focuses on SOC engineering controls: service-identity use, logging health, analytic dependencies, alert routing, independent evidence, and restoration testing.',
+  themes: ['credential-misuse', 'cloud-saas', 'sabotage', 'ransomware', 'detection-response'],
+  stages: {
+    preparation: { action: 'Automation credential is recovered from a stale deployment', detail: 'A long-lived secret remains usable after the deployment is retired.', sourceId: 'cloud-storage', signal: 'Service credential age and last use', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Automation identity calls cloud administration APIs', detail: 'Non-interactive access originates from a new client and network.', sourceId: 'idp-auth', signal: 'Workload identity, client, and source network', evidenceStatus: 'present' },
+    misuse: { action: 'Audit export and alert routes are changed', detail: 'The actor disables one sink and redirects operational notifications.', sourceId: 'saas-audit', signal: 'Audit configuration and alert-route changes', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Recovery resources and critical services are enumerated', detail: 'The actor maps backup locations and systems needed for restoration.', sourceId: 'cloud-storage', signal: 'Recovery-resource listing and access', evidenceStatus: 'present' },
+    exfiltration: { action: 'No data-transfer action is modelled', detail: 'The objective is a quiet impact window, not data theft.', sourceId: 'proxy-dns', signal: 'Outbound transfer evidence', evidenceStatus: 'present', actorPresent: false },
+    concealment: { action: 'Telemetry delivery drops below its normal baseline', detail: 'Events exist at the source but stop reaching the detection platform.', sourceId: 'siem-enrichment', signal: 'Source freshness, volume, and parser health', evidenceStatus: 'absent', gapType: 'telemetry' },
+    response: { action: 'Independent health alert triggers restoration', detail: 'Responders must restore logging, revoke the identity, and verify missed detections.', sourceId: 'siem-enrichment', signal: 'Independent pipeline-health alert and response runbook', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
 export const threatModel: ThreatModel = {
-  version: 'threat-model-0.1.0',
+  version: 'threat-model-0.2.0',
   note: 'Synthetic threat model for workshop use. Attack chain, evidence, controls, typed gaps, and remediation are modelled together so the 2D map and the 3D simulation always describe the same assessment.',
   safety:
     'Demo data only. Do not enter private logs, tenant identifiers, hostnames, credentials, or unsafe samples into this public tool.',
@@ -921,6 +1069,9 @@ export const threatModel: ThreatModel = {
     internalPrivilegedSabotage,
     cyberPhishingToRansomware,
     cyberSaasTokenTheft,
+    thirdPartyCloudExport,
+    breakGlassCredentialMisuse,
+    detectionPipelineSuppression,
   ],
 };
 

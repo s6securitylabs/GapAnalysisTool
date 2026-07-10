@@ -59,6 +59,47 @@ export function AttackChainMap({
         </span>
       </div>
 
+      <figure className="attack-chain-flow" aria-labelledby={`attack-chain-caption-${scenario.id}`}>
+        <figcaption id={`attack-chain-caption-${scenario.id}`}>
+          <strong>Scenario path: {scenario.title}</strong>
+          <span>Follow the arrows from actor preparation through defender response. Each stage shows evidence, control, and gap readiness at a glance.</span>
+        </figcaption>
+        <ol aria-label={`Directional attack chain for ${scenario.title}`}>
+          {outcome.stages.map((stage) => {
+            const evidenceReady = stage.evidenceHealth.present;
+            const evidenceTotal = stage.scenarioStage.evidence.length;
+            const holdingControls = stage.scenarioStage.controls.filter((control) => control.outcome === 'holds').length;
+            const reachedStage = reached.has(stage.stageId);
+            return (
+              <li className={`attack-flow-stage ${stage.posture} ${reachedStage ? 'reached' : 'beyond-stop'}`} key={stage.stageId}>
+                <div className="attack-flow-heading">
+                  <span className="attack-flow-order">{stage.order}</span>
+                  <span className="scenario-marker">{stage.stageId === 'response' ? 'Defender' : 'Actor'}</span>
+                </div>
+                <strong>{stage.stage.label}</strong>
+                <span className="attack-flow-action">{stage.scenarioStage.action.summary}</span>
+                <dl>
+                  <div>
+                    <dt>Evidence</dt>
+                    <dd>{evidenceReady}/{evidenceTotal} ready</dd>
+                  </div>
+                  <div>
+                    <dt>Controls</dt>
+                    <dd>{holdingControls}/{stage.scenarioStage.controls.length} holding</dd>
+                  </div>
+                  <div>
+                    <dt>Gaps</dt>
+                    <dd>{stage.scenarioStage.gaps.length}</dd>
+                  </div>
+                </dl>
+                <span className={`posture-badge ${stage.posture}`}>{postureLabels[stage.posture]}</span>
+                {stage.halted && <span className="attack-flow-stop">Chain stops here</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </figure>
+
       <div className="chain-scroll" tabIndex={0} role="region" aria-label={`Attack chain map for ${scenario.title}`}>
         <div className="chain-grid" style={{ ['--stage-count' as string]: String(outcome.stages.length) }} role="table">
           <div className="chain-row" role="row">

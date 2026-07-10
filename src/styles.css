@@ -349,20 +349,44 @@ small {
   gap: 10px;
 }
 
-.workflow-shell,
-.trust-boundary,
-.secondary-shelf {
+.workflow-shell {
   margin-top: 12px;
 }
 
 .workflow-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 14px;
   margin-top: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.workflow-step {
+  position: relative;
+  min-width: 0;
+}
+
+.workflow-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 25px;
+  left: calc(100% + 2px);
+  width: 10px;
+  height: 2px;
+  background: var(--border-strong);
+}
+
+.workflow-step.complete:not(:last-child)::after,
+.workflow-step.current:not(:last-child)::after {
+  background: var(--accent);
 }
 
 .workflow-button {
+  position: relative;
+  z-index: 2;
+  width: 100%;
   display: grid;
   gap: 4px;
   align-items: start;
@@ -377,6 +401,54 @@ small {
 .workflow-button.active {
   background: var(--accent-soft);
   border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.workflow-step.complete .workflow-button {
+  border-color: #b6ddc6;
+  background: var(--success-soft);
+}
+
+.workflow-step.next .workflow-button {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.workflow-step-head {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.workflow-number {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.workflow-step.complete .workflow-number {
+  background: var(--success);
+}
+
+.workflow-step.current .workflow-number,
+.workflow-step.next .workflow-number {
+  background: var(--accent);
+}
+
+.workflow-state {
+  color: var(--text-soft);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .workflow-button strong,
@@ -389,17 +461,9 @@ small {
   line-height: 1.35;
 }
 
-.secondary-shelf {
+.reference-hub {
   display: grid;
-  gap: 8px;
-}
-
-.shelf-label {
-  color: var(--text-soft);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 700;
+  gap: 12px;
 }
 
 .trust-boundary {
@@ -939,7 +1003,11 @@ small {
   }
 
   .workflow-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .workflow-step::after {
+    display: none;
   }
 }
 
@@ -1070,7 +1138,7 @@ small {
   }
 
   .workflow-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: 0;
   }
@@ -1181,6 +1249,13 @@ small {
   background: var(--accent-soft);
 }
 
+.scenario-themes,
+.scenario-theme-line {
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  text-transform: capitalize;
+}
+
 .kind-tag {
   font-size: 0.68rem;
   font-weight: 800;
@@ -1244,6 +1319,150 @@ small {
 
 .chain-stop.open {
   color: var(--danger);
+}
+
+.attack-chain-flow {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f9fbfd, #f3f7fb);
+  overflow-x: auto;
+}
+
+.attack-chain-flow figcaption {
+  display: grid;
+  gap: 2px;
+}
+
+.attack-chain-flow figcaption span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.attack-chain-flow ol {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(165px, 1fr));
+  gap: 22px;
+  min-width: 1280px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.attack-flow-stage {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+  min-height: 190px;
+  padding: 11px;
+  border: 1px solid var(--border-strong);
+  border-top: 4px solid var(--accent);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 3px 10px rgba(23, 50, 77, 0.08);
+}
+
+.attack-flow-stage:not(:last-child)::after {
+  content: "➜";
+  position: absolute;
+  top: 82px;
+  right: -20px;
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.attack-flow-stage.blind {
+  border-top-color: #334155;
+}
+
+.attack-flow-stage.undetected {
+  border-top-color: var(--danger);
+}
+
+.attack-flow-stage.unresolved {
+  border-top-color: var(--warning);
+}
+
+.attack-flow-stage.accepted-risk,
+.attack-flow-stage.no-action {
+  border-top-color: var(--text-soft);
+}
+
+.attack-flow-stage.beyond-stop {
+  opacity: 0.48;
+}
+
+.attack-flow-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.attack-flow-order {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--accent-strong);
+  font-weight: 800;
+}
+
+.scenario-marker {
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.attack-flow-action {
+  min-height: 3.2em;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.attack-flow-stage dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.attack-flow-stage dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 3px;
+  font-size: 0.7rem;
+}
+
+.attack-flow-stage dt {
+  color: var(--text-soft);
+}
+
+.attack-flow-stage dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.attack-flow-stop {
+  color: var(--success);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .chain-scroll {

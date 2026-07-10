@@ -76,6 +76,7 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
           >
             <span className={`kind-tag ${item.kind}`}>{item.kind === 'internal' ? 'Internal' : 'Cyber'}</span>
             <strong>{item.title}</strong>
+            <span className="scenario-themes">{item.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</span>
           </button>
         ))}
       </div>
@@ -85,6 +86,7 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
           <strong>Objective.</strong> {scenario.objective}
         </p>
         <p>{scenario.summary}</p>
+        <p className="scenario-theme-line"><strong>Coverage themes.</strong> {scenario.themes.map((theme) => theme.replaceAll('-', ' ')).join(' · ')}</p>
         <div className="button-row">
           <button onClick={() => downloadJson(`threat-model-${scenario.id}.json`, serializeScenario(scenario))}>
             Export threat model (JSON)

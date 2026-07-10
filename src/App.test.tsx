@@ -35,22 +35,25 @@ beforeEach(() => {
 });
 
 describe('App integrated assessment experience', () => {
-  it('defaults to overview with the six-step workflow and no executive summary route', () => {
+  it('defaults to overview with an ordered seven-step workflow and no repeated reference footer', () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
 
     expect(screen.getByRole('heading', { name: /^Gaps Analysis Tool$/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Work the assessment in order\. Reference views stay off the main path\./i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Assessment overview for workshop framing, verified readiness, and reporting/i })).toBeInTheDocument();
-    expect(within(workflowNav).getByRole('button', { name: /^Overview/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(workflowNav).getByRole('button', { name: /^Overview/i })).toHaveAttribute('aria-current', 'step');
     expect(within(workflowNav).getByRole('button', { name: /Scope/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /Source Readiness/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /Threat Modelling Scenarios/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^Gaps/i })).toBeInTheDocument();
-    expect(within(workflowNav).getByRole('button', { name: /^Report$/i })).toBeInTheDocument();
+    expect(within(workflowNav).getByRole('button', { name: /^Report/i })).toBeInTheDocument();
+    expect(within(workflowNav).getByRole('button', { name: /^References/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Executive Summary' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Risk Matrix' })).toBeInTheDocument();
-    expect(screen.getByText(/Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Risk Matrix' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing/i)).not.toBeInTheDocument();
+    expect(within(workflowNav).getByText('Current')).toBeInTheDocument();
+    expect(within(workflowNav).getByText('Next')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Start guided workflow/i })).not.toBeInTheDocument();
   });
 
@@ -65,7 +68,7 @@ describe('App integrated assessment experience', () => {
     expect(screen.queryByRole('button', { name: 'Verify all demo checks' })).not.toBeInTheDocument();
   });
 
-  it('supports the six-step workflow spine and local snapshot saving', async () => {
+  it('supports the ordered workflow spine and local snapshot saving', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
 
@@ -106,6 +109,12 @@ describe('App integrated assessment experience', () => {
     const chain = ['Preparation', 'Access', 'Misuse', 'Collection', 'Exfiltration', 'Concealment', 'Response'];
     expect(headers).toHaveLength(chain.length + 1);
     chain.forEach((label, index) => expect(headers[index + 1]).toContain(label));
+
+    const flow = screen.getByRole('list', { name: /Directional attack chain/i });
+    expect(within(flow).getAllByRole('listitem')).toHaveLength(chain.length);
+    expect(within(flow).getAllByText('Actor')).toHaveLength(6);
+    expect(within(flow).getByText('Defender')).toBeInTheDocument();
+    expect(within(flow).getAllByText(/ready/i).length).toBeGreaterThan(0);
   });
 
   it('keeps accepted risk visible as a gap that contributes no coverage', async () => {
@@ -156,6 +165,30 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByText(/Convert one stolen session into estate-wide encryption/i)).toBeInTheDocument();
   });
 
+  it('keeps reference views and trust guidance in the final workflow step only', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
+
+    expect(screen.queryByRole('group', { name: /Reference views/i })).not.toBeInTheDocument();
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /^References/i }));
+
+    expect(screen.getByRole('heading', { name: /Supporting views and assessment boundaries/i })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /Reference views/i })).toBeInTheDocument();
+    expect(screen.getByText(/Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing/i)).toBeInTheDocument();
+    expect(screen.getByText('Handling caveats')).toBeInTheDocument();
+  });
+
+  it('moves between workflow steps with arrow keys', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
+    const overview = within(workflowNav).getByRole('button', { name: /^Overview/i });
+    overview.focus();
+    await userEvent.keyboard('{ArrowRight}');
+
+    expect(within(workflowNav).getByRole('button', { name: /^Scope/i })).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('heading', { name: /Confirm assessment scope/i })).toBeInTheDocument();
+  });
+
   it('keeps metadata editable in overview', async () => {
     render(<App />);
 
@@ -165,6 +198,21 @@ describe('App integrated assessment experience', () => {
 
     expect(screen.getByDisplayValue('Stakeholder workshop overview')).toBeInTheDocument();
     expect(screen.getByText('Stakeholder workshop overview')).toBeInTheDocument();
+  });
+
+  it('explains why each log source is wanted and its positive and negative impact', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Source Readiness/i }));
+
+    const idpCard = screen.getByRole('heading', { name: /IdP authentication/i }).closest('article') as HTMLElement;
+    expect(within(idpCard).getByText(/Why this log source matters, impact, and handling guidance/i)).toBeInTheDocument();
+    expect(within(idpCard).getByText('Why we want it')).toBeInTheDocument();
+    expect(within(idpCard).getByText(/Links actions to authenticated sessions/i)).toBeInTheDocument();
+    expect(within(idpCard).getByText('Positive impact')).toBeInTheDocument();
+    expect(within(idpCard).getByText(/Fast account compromise triage/i)).toBeInTheDocument();
+    expect(within(idpCard).getByText('Negative impact / caveat')).toBeInTheDocument();
+    expect(within(idpCard).getByText(/false certainty about the human behind a session/i)).toBeInTheDocument();
   });
 
   it('filters the verification workspace to sources that still need attention', async () => {

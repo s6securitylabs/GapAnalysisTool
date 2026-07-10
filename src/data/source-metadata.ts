@@ -22,6 +22,9 @@ export interface RemediationRecord {
 
 export interface SourceMetadata {
   glossaryTerms: string[];
+  whyCollect: string;
+  positiveImpact: string;
+  negativeImpact: string;
   privacyNotes: string[];
   remediation: RemediationRecord;
 }
@@ -29,6 +32,9 @@ export interface SourceMetadata {
 export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   'idp-auth': {
     glossaryTerms: ['conditional access', 'MFA', 'token revocation'],
+    whyCollect: 'Links actions to authenticated sessions, MFA decisions, token lifecycle, and access expansion.',
+    positiveImpact: 'Fast account compromise triage, session containment, and privilege-change reconstruction.',
+    negativeImpact: 'Can create false certainty about the human behind a session; risky if used without device, approval, and session-end context.',
     privacyNotes: ['Use identity telemetry to prove session lifecycle and access changes, not to infer employee intent.'],
     remediation: {
       gapOwner: 'Identity engineering',
@@ -49,6 +55,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'endpoint-edr': {
     glossaryTerms: ['process lineage', 'removable media', 'sensor tamper'],
+    whyCollect: 'Shows process lineage, local staging, archive creation, removable media, and sensor tamper on managed devices.',
+    positiveImpact: 'Lets analysts prove collection and concealment behavior, preserve endpoint evidence, and prioritize response.',
+    negativeImpact: 'High-volume and privacy-sensitive; unmanaged devices and sensor gaps can make absence of evidence misleading.',
     privacyNotes: ['Limit endpoint review to approved investigative scope and documented evidence handling.'],
     remediation: {
       gapOwner: 'Endpoint security',
@@ -69,6 +78,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   email: {
     glossaryTerms: ['mailbox audit', 'forwarding rule', 'delegate access'],
+    whyCollect: 'Captures mailbox sessions, forwarding, attachments, delegation, and admin actions used in data movement or persistence.',
+    positiveImpact: 'Supports external disclosure triage, forwarding-rule cleanup, and delegated-access investigations.',
+    negativeImpact: 'Message content and collaboration metadata are sensitive; overcollection can breach purpose limitation and create legal review burden.',
     privacyNotes: ['Email and collaboration data often carries sensitive or personal content; require documented purpose limitation.'],
     remediation: {
       gapOwner: 'Messaging security',
@@ -89,6 +101,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   dlp: {
     glossaryTerms: ['DLP', 'policy disposition', 'channel coverage'],
+    whyCollect: 'Explains whether sensitive data movement matched policy, which channel was inspected, and what disposition occurred.',
+    positiveImpact: 'Helps separate high-impact exposure from generic transfer activity and tunes prevention controls.',
+    negativeImpact: 'Policy gaps, exceptions, and partial channel coverage can produce false negatives or noisy false positives.',
     privacyNotes: ['DLP events show control outcomes, not complete data lineage; validate channel coverage before drawing conclusions.'],
     remediation: {
       gapOwner: 'Data protection engineering',
@@ -109,6 +124,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'file-access': {
     glossaryTerms: ['object-level audit', 'permission change', 'data classification'],
+    whyCollect: 'Shows object-level reads, exports, deletes, clones, and permission changes across sensitive repositories and data stores.',
+    positiveImpact: 'Turns a suspicion into a defensible list of touched objects, owners, and business impact.',
+    negativeImpact: 'Raw access is not intent; broad monitoring can be intrusive and weak without classification, role, and project context.',
     privacyNotes: ['File and repo activity should be corroborated with business context before labeling access as malicious.'],
     remediation: {
       gapOwner: 'Platform telemetry',
@@ -129,6 +147,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   vpn: {
     glossaryTerms: ['device posture', 'session lifecycle', 'assigned IP'],
+    whyCollect: 'Adds remote-session timing, assigned IP, device posture, and access-policy context around other activity.',
+    positiveImpact: 'Improves correlation for remote work, risky devices, impossible travel, and compromised-session containment.',
+    negativeImpact: 'Usually correlation context only; NAT, split tunneling, and missing logout records can mislead timelines.',
     privacyNotes: ['Remote access logs are correlation context, not standalone proof of user behavior.'],
     remediation: {
       gapOwner: 'Network security',
@@ -149,6 +170,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'proxy-dns': {
     glossaryTerms: ['egress volume', 'DNS correlation', 'destination category'],
+    whyCollect: 'Shows web destinations, DNS resolution, upload volume, and allow/block policy decisions for outbound paths.',
+    positiveImpact: 'Identifies exfiltration destinations and validates whether egress controls actually acted.',
+    negativeImpact: 'Can become browsing surveillance if unscoped; anonymous NAT logs and category-only data are weak evidence.',
     privacyNotes: ['Web destinations and DNS should support corroboration, not become a browsing-surveillance feed.'],
     remediation: {
       gapOwner: 'Network security',
@@ -169,6 +193,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'saas-audit': {
     glossaryTerms: ['audit export', 'object action', 'external share'],
+    whyCollect: 'Captures business-app object views, downloads, exports, shares, admin changes, and audit-routing changes.',
+    positiveImpact: 'High-value proof for insider misuse in the systems where work and data actually live.',
+    negativeImpact: 'License tiers and APIs vary; audit gaps can hide critical actions while broad SaaS logs expose sensitive business behavior.',
     privacyNotes: ['SaaS audit quality varies by license tier and product; validate fidelity before claiming readiness.'],
     remediation: {
       gapOwner: 'SaaS platform engineering',
@@ -189,6 +216,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'hr-case': {
     glossaryTerms: ['least privilege', 'purpose limitation', 'legal hold'],
+    whyCollect: 'Provides governed workforce lifecycle, role, manager, and case context for approved investigations.',
+    positiveImpact: 'Improves prioritization around offboarding, role changes, conflicts, and legal holds without guessing motive.',
+    negativeImpact: 'Highly sensitive; must never become standalone proof or generalized workforce monitoring.',
     privacyNotes: ['HR and case data must stay minimum-necessary, approval-backed, and never used as standalone proof of risk.'],
     remediation: {
       gapOwner: 'HR systems',
@@ -209,6 +239,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'physical-access': {
     glossaryTerms: ['badge event', 'restricted area', 'tailgate alarm'],
+    whyCollect: 'Corroborates whether a person or badge was near restricted areas or facilities during relevant windows.',
+    positiveImpact: 'Useful for restricted-area investigations and cyber/physical timeline correlation.',
+    negativeImpact: 'Location data is sensitive and often ambiguous; tailgating, lost badges, and shared access can create harmful false inferences.',
     privacyNotes: ['Physical access and location data require legal review and should corroborate cyber facts rather than imply motive.'],
     remediation: {
       gapOwner: 'Corporate security systems',
@@ -229,6 +262,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'privileged-admin': {
     glossaryTerms: ['PAM', 'vault checkout', 'break glass'],
+    whyCollect: 'Records privileged role activation, vault checkout, commands, session evidence, and approval correlation.',
+    positiveImpact: 'Lets SOC and engineering teams prove whether destructive or sensitive admin actions were authorized.',
+    negativeImpact: 'Command capture and session recording are high-trust controls; poor scoping can expose secrets or normal admin work unnecessarily.',
     privacyNotes: ['Privileged telemetry should be correlated to approved tickets and maintenance windows before escalation.'],
     remediation: {
       gapOwner: 'Privileged access engineering',
@@ -249,6 +285,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'cloud-storage': {
     glossaryTerms: ['data events', 'ACL change', 'public link'],
+    whyCollect: 'Shows object reads/writes/deletes, public links, ACL or bucket policy changes, and service-account use.',
+    positiveImpact: 'Prioritizes sensitive cloud data exposure and proves which principals touched or exposed objects.',
+    negativeImpact: 'Data-event logging can be expensive and noisy; selective enablement can leave blind spots if not documented.',
     privacyNotes: ['Cloud object access should be prioritized by classification and ownership, not bulk-monitored without business context.'],
     remediation: {
       gapOwner: 'Cloud platform security',
@@ -269,6 +308,9 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
   },
   'siem-enrichment': {
     glossaryTerms: ['normalization', 'correlation health', 'retention window'],
+    whyCollect: 'Proves whether raw sources are fresh, parsed, searchable, retained, and enriched with entity/data context.',
+    positiveImpact: 'Prevents dashboards from masking broken telemetry and gives analysts reliable pivots during response.',
+    negativeImpact: 'Enrichment is not direct evidence; stale or wrong normalization can amplify bad conclusions across many detections.',
     privacyNotes: ['Correlation layers should improve investigative readiness, not hide broken raw-source quality beneath dashboards.'],
     remediation: {
       gapOwner: 'Detection engineering',
