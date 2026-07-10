@@ -302,7 +302,7 @@ describe('App integrated assessment experience', () => {
     await userEvent.keyboard('{ArrowRight}');
 
     expect(within(workflowNav).getByRole('button', { name: /^Scope/i })).toHaveAttribute('aria-current', 'step');
-    expect(screen.getByRole('heading', { name: /Confirm assessment scope/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Confirm the assessment boundary/i })).toBeInTheDocument();
   });
 
   it('keeps metadata editable in overview', async () => {
@@ -377,6 +377,7 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('heading', { name: /Priority evidence improvements/i })).toBeInTheDocument();
     expect(screen.getByText(/Strong blocking controls would prevent the path/i)).toBeInTheDocument();
     expect(screen.getByText(/Strong containment would stop it after detection/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Gaps Analysis Tool by S6/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/critical controls stopped|Stopped \/ investigable/i)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Print or save PDF/i }));

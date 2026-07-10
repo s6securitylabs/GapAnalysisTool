@@ -573,11 +573,6 @@ function App() {
           <ScopePanel
             assessmentMode={assessmentMode}
             metadata={metadata}
-            summary={summary}
-            verificationStats={verificationStats}
-            sourceById={sourceById}
-            verificationSummary={verificationSummary}
-            remediationState={remediationState}
             onOpenVerify={() => setActiveView('Verify')}
           />
         )}
@@ -793,79 +788,41 @@ function WorkflowFooter({
 function ScopePanel(props: {
   assessmentMode: AssessmentMode;
   metadata: AssessmentMetadata;
-  summary: CoverageSummary;
-  verificationStats: ReturnType<typeof buildVerificationStats>;
-  sourceById: Map<LogSourceId, LogSource>;
-  verificationSummary: ReturnType<typeof buildVerificationSummary>;
-  remediationState: RemediationState;
   onOpenVerify: () => void;
 }) {
-  const readySources = [...props.verificationSummary.values()].filter((item) => item.effective).length;
-  const prioritySources = summarySourceRows(props.verificationSummary, props.sourceById, props.remediationState);
-
   return (
     <section className="stack">
       <div className="grid two-col">
-      <section className="panel">
-        <p className="eyebrow">Step 2</p>
-        <h2>Confirm assessment scope and evidence-handling boundaries</h2>
-        <p>Record what is in scope, who owns the assessment, and who may handle sensitive evidence.</p>
-        <div className="compact-list">
-          <div className="list-card">
-            <strong>Assessment</strong>
-            <p>{props.metadata.name}</p>
-            <small>{props.metadata.owner || 'No owner assigned yet'}</small>
+        <section className="panel">
+          <p className="eyebrow">Step 2</p>
+          <h2>Confirm the assessment boundary</h2>
+          <p>Make the scope explicit before entering evidence. This page records the decision boundary, not readiness findings.</p>
+          <div className="compact-list">
+            <div className="list-card">
+              <strong>Assessment</strong>
+              <p>{props.metadata.name}</p>
+              <small>{props.metadata.owner || 'No owner assigned yet'}</small>
+            </div>
+            <div className="list-card">
+              <strong>Scope statement</strong>
+              <p>{props.metadata.scope || 'No scope statement recorded yet.'}</p>
+              <small>{props.metadata.notes || 'No additional notes recorded.'}</small>
+            </div>
           </div>
-          <div className="list-card">
-            <strong>Scope statement</strong>
-            <p>{props.metadata.scope}</p>
-            <small>{props.metadata.notes || 'No additional notes recorded.'}</small>
-          </div>
-        </div>
-        <table className="data-table">
-          <caption>Current in-scope source readiness rollup</caption>
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>Status</th>
-              <th>Critical checks</th>
-              <th>Gap owner</th>
-            </tr>
-          </thead>
-          <tbody>
-            {prioritySources.slice(0, 6).map((row) => (
-              <tr key={row.sourceId}>
-                <td>{row.sourceName}</td>
-                <td>{row.status}</td>
-                <td>
-                  {row.criticalVerified}/{row.criticalTotal}
-                </td>
-                <td>{row.gapOwner}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-      <section className="panel">
-        <p className="eyebrow">Step 2 checkpoint</p>
-        <h2>Move from scope into source readiness</h2>
-        <div className="metric-grid compact-metrics">
-          <Metric label="Coverage" value={formatPercent(props.summary.overallScore)} />
-          <Metric label="Ready sources" value={readySources.toString()} />
-          <Metric label="Accepted risk" value={props.verificationStats.acceptedRiskSources.toString()} />
-          <Metric label="Material risk gaps" value={props.summary.highRiskGapCount.toString()} />
-        </div>
-        <ul className="prose-list">
-          <li>Define which business areas and log domains are in scope.</li>
-          <li>Confirm that HR, email, physical, or behavioral context is approval-gated and minimum-necessary.</li>
-          <li>Use this assessment to visualize readiness gaps, not to substitute for actual SIEM/EDR/DLP investigations.</li>
-        </ul>
-        <div className="button-row">
+        </section>
+        <section className="panel">
+          <p className="eyebrow">Before you continue</p>
+          <h2>Set the handling rules</h2>
+          <ul className="prose-list">
+            <li>Define the business areas, systems, and investigation paths included in this assessment.</li>
+            <li>Limit workforce, email, physical, and case context to the minimum necessary and approved purpose.</li>
+            <li>Use independent corroboration and governed human review before any escalation.</li>
+            <li>Record verified evidence on the next page. This tool does not ingest events or establish wrongdoing.</li>
+          </ul>
           <span className={`pill ${props.assessmentMode === 'real' ? 'warning-pill' : 'info-pill'}`}>
-            {props.assessmentMode === 'real' ? 'Evidence starts blank' : 'Guide data loaded'}
+            {props.assessmentMode === 'real' ? 'Live assessment: evidence starts blank' : 'Demo: synthetic guide data loaded'}
           </span>
-        </div>
-      </section>
+        </section>
       </div>
       <WorkflowFooter
         current="Scope"
