@@ -41,6 +41,16 @@ export const glossary: GlossaryTerm[] = [
     whyItMatters: 'This is critical when HR, email, behavior, or physical-security context is involved.',
   },
   {
+    term: 'Human review',
+    plainEnglish: 'A qualified, multidisciplinary reviewer checks a signal in context before any decision or action is taken.',
+    whyItMatters: 'Workforce and behavioural indicators are leads, not proof; human review reduces automation bias, discrimination, and harmful false positives.',
+  },
+  {
+    term: 'Minimum necessary',
+    plainEnglish: 'Collect and expose only the fields needed for the approved question, rather than copying an entire personnel or case record.',
+    whyItMatters: 'It limits privacy harm and keeps highly sensitive workforce context from becoming general employee surveillance.',
+  },
+  {
     term: 'SIEM',
     plainEnglish: 'Security Information and Event Management: the platform that collects, searches, and correlates logs from many systems.',
     whyItMatters: 'It is usually where an analyst actually runs the searches this tool assumes are possible.',

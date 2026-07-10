@@ -206,7 +206,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
       },
       evidence: [
         { sourceId: 'hr-case', signal: 'Resignation date and notice window', requiredFields: ['user', 'status', 'effectiveDate', 'manager'], status: 'present' },
-        { sourceId: 'siem-enrichment', signal: 'Workforce risk-window enrichment on user entity', requiredFields: ['user', 'riskWindow', 'watchlist'], status: 'absent' },
+        { sourceId: 'siem-enrichment', signal: 'Approved workforce transition-window enrichment on the user entity', requiredFields: ['user', 'transitionType', 'effectiveFrom', 'effectiveTo', 'approvalId'], status: 'absent' },
       ],
       controls: [
         { id: 'joiner-mover-leaver', name: 'Joiner/mover/leaver review', effect: 'investigate', outcome: 'partial', confidence: 'medium', note: 'Runs at termination, not at notice. The highest-risk four weeks fall outside it.' },
@@ -217,7 +217,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
           type: 'telemetry',
           severity: 'high',
           confidence: 'high',
-          statement: 'HR notice events are not delivered to the SIEM, so no risk window is attached to the user entity.',
+          statement: 'HR notice events are not delivered to the SIEM, so no approved transition window is attached to the user entity.',
           consequence: 'Later collection and transfer activity is triaged without the one piece of context that would raise its priority.',
         },
       ],

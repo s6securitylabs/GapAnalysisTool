@@ -34,6 +34,12 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
+async function enterDemoMode() {
+  await userEvent.click(screen.getByRole('button', { name: /^Demo$/i }));
+  expect(screen.getByRole('dialog', { name: /Explore the tool with example data/i })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /Show demo data/i }));
+}
+
 describe('App integrated assessment experience', () => {
   it('defaults to overview with an ordered seven-step workflow and no repeated reference footer', () => {
     render(<App />);
@@ -55,12 +61,23 @@ describe('App integrated assessment experience', () => {
     expect(within(workflowNav).getByText('Current')).toBeInTheDocument();
     expect(within(workflowNav).getByText('Next')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Start guided workflow/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /New user guide/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Demo$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Security Engineering Hub/i })).toHaveAttribute('href', '/');
     expect(screen.queryByText(/Desktop-first|white-first|Seeded workshop readiness|Open report hub/i)).not.toBeInTheDocument();
   });
 
-  it('starts as a real assessment and only seeds example evidence when the new user guide is opened', async () => {
+  it('opens Demo as an explanatory popup and supports cancelling with Escape', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: /^Demo$/i }));
+    const dialog = screen.getByRole('dialog', { name: /Explore the tool with example data/i });
+    expect(within(dialog).getByRole('button', { name: /Cancel/i })).toHaveFocus();
+    expect(within(dialog).getByText(/synthetic evidence/i)).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Demo data is loaded/i)).not.toBeInTheDocument();
+  });
+
+  it('starts as a real assessment and only seeds synthetic evidence after Demo explains the switch', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
     const assessmentName = screen.getByRole('textbox', { name: /Assessment name/i });
@@ -73,13 +90,13 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByText(/Verify each source individually/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Verify all demo checks' })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /New user guide/i }));
-    expect(screen.getByRole('button', { name: /Exit guide/i })).toBeInTheDocument();
-    expect(screen.getByText(/Example data is loaded/i)).toBeInTheDocument();
+    await enterDemoMode();
+    expect(screen.getByRole('button', { name: /Exit demo/i })).toBeInTheDocument();
+    expect(screen.getByText(/Demo data is loaded/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Verify all demo checks' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Clear evidence' })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Exit guide/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Exit demo/i }));
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Overview/i }));
     expect(screen.getByRole('textbox', { name: /Assessment name/i })).toHaveValue('Real assessment in progress');
   });
@@ -99,14 +116,14 @@ describe('App integrated assessment experience', () => {
     expect(screen.getAllByText(/Untitled assessment/i).length).toBeGreaterThan(0);
   });
 
-  it('offers a 2D/3D switch over one threat model, with the 2D map authoritative by default', async () => {
+  it('offers a primary/Alpha 3D switch over one threat model, with the primary view authoritative by default', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     const modeSwitch = screen.getByRole('group', { name: /Visualisation mode/i });
-    expect(within(modeSwitch).getByRole('button', { name: '2D Attack Chain Map' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(modeSwitch).getByRole('button', { name: '3D Threat Simulation' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(modeSwitch).getByRole('button', { name: 'Primary view' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(modeSwitch).getByRole('button', { name: /3D map Alpha/i })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText(/Choose a scenario to see the actions, evidence, controls, gaps, and response work/i)).toBeInTheDocument();
     expect(screen.getByText(/Do not enter private logs, tenant identifiers, hostnames, credentials, or unsafe samples/i)).toBeInTheDocument();
   });
@@ -131,7 +148,7 @@ describe('App integrated assessment experience', () => {
     expect(within(flow).getAllByText('Actor')).toHaveLength(6);
     expect(within(flow).getByText('Defender')).toBeInTheDocument();
     expect(within(flow).getAllByText(/ready/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('2D map legend')).toBeInTheDocument();
+    expect(screen.getByText('Primary view legend')).toBeInTheDocument();
     expect(screen.getByText(/Evidence partial/i)).toBeInTheDocument();
   });
 
@@ -156,18 +173,17 @@ describe('App integrated assessment experience', () => {
     expect(within(legend).getByText(/Adds friction and buys response time\. It does not stop the action\./i)).toBeInTheDocument();
   });
 
-  it('falls back to a flat simulation and points back at the 2D map when WebGL is unavailable', async () => {
+  it('falls back to a flat simulation and points back at the primary view when WebGL is unavailable', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
-    await userEvent.click(screen.getByRole('button', { name: '3D Threat Simulation' }));
+    await userEvent.click(screen.getByRole('button', { name: /3D map Alpha/i }));
 
     const notice = screen.getByRole('status');
-    expect(within(notice).getByText(/3D Threat Simulation unavailable/i)).toBeInTheDocument();
-    expect(within(notice).getByText(/3D is not supported in this environment because WebGL is unavailable or blocked/i)).toBeInTheDocument();
-    expect(within(notice).getByText(/Try the 3D Threat Simulation in a modern browser with hardware acceleration and WebGL enabled/i)).toBeInTheDocument();
-    expect(within(notice).getByText(/use the 2D Attack Chain Map above instead/i)).toBeInTheDocument();
-    expect(screen.getByText('3D simulation legend')).toBeInTheDocument();
+    expect(within(notice).getByText(/3D map unavailable/i)).toBeInTheDocument();
+    expect(within(notice).getByText(/Alpha 3D map is not supported in this environment because WebGL is unavailable or blocked/i)).toBeInTheDocument();
+    expect(within(notice).getByText(/use the primary view above instead/i)).toBeInTheDocument();
+    expect(screen.getByText(/3D map legend · Alpha/i)).toBeInTheDocument();
     expect(screen.getByText(/Lit telemetry\/evidence beam/i)).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Flat simulation of/i })).toBeInTheDocument();
   });
@@ -220,7 +236,13 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('heading', { name: /Check how a result was reached/i })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /Reference views/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Risk register/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Research basis/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Definitions/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Research basis/i }));
+    expect(screen.getByRole('heading', { name: /Research basis and indicator boundaries/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Insider Threat Knowledge Base/i })).toHaveAttribute('href', 'https://insiderthreat.mitre.org/');
+    expect(screen.getByText(/opaque employee guilt score/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lawful purpose, minimum necessary fields/i)).toBeInTheDocument();
     expect(screen.queryByText(/Trust boundary|Handling caveats|Catalogue notes/i)).not.toBeInTheDocument();
   });
 
@@ -264,7 +286,7 @@ describe('App integrated assessment experience', () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
 
-    await userEvent.click(screen.getByRole('button', { name: /New user guide/i }));
+    await enterDemoMode();
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Source Readiness/i }));
     expect(screen.getByRole('heading', { name: /IdP authentication/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Email and collaboration/i })).toBeInTheDocument();
@@ -294,7 +316,7 @@ describe('App integrated assessment experience', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(screen.getByRole('button', { name: /New user guide/i }));
+    await enterDemoMode();
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
     await userEvent.click(screen.getByRole('button', { name: /Open executive report/i }));
 

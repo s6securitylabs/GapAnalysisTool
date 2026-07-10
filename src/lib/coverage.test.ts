@@ -79,11 +79,11 @@ describe('coverage scoring', () => {
     );
     expect(csv).toContain('Quarterly review');
     expect(csv).toContain('IdP authentication');
-    expect(csv).toContain('HR / case management');
+    expect(csv).toContain('Workforce lifecycle / case context');
     expect(csv).toContain('purpose limitation');
     expect(csv).toContain('gap_owners');
     expect(csv).toContain('detection_use_cases');
     expect(csv).toContain('validation_methods');
-    expect(csv).toContain('critical: HR / case management');
+    expect(csv).toContain('critical: Workforce lifecycle / case context');
   });
 });

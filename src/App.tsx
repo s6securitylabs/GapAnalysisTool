@@ -53,9 +53,58 @@ type PrimaryView = (typeof primaryViews)[number]['id'];
 
 const secondaryViews = [
   { id: 'Risk register', label: 'Risk register' },
+  { id: 'Research basis', label: 'Research basis' },
   { id: 'Definitions', label: 'Definitions' },
 ] as const;
 type SecondaryView = (typeof secondaryViews)[number]['id'];
+
+const insiderThreatResearch = [
+  {
+    title: 'Insider Threat Knowledge Base',
+    publisher: 'MITRE',
+    href: 'https://insiderthreat.mitre.org/',
+    contribution: 'Frames insider threat as observable actions, assets, vulnerabilities, and mitigations rather than a single employee score.',
+  },
+  {
+    title: 'Insider Threat Mitigation Guide',
+    publisher: 'CISA',
+    href: 'https://www.cisa.gov/resources-tools/resources/insider-threat-mitigation-guide',
+    contribution: 'Supports a prevention, detection, response, and multidisciplinary programme model across people, process, physical, and cyber evidence.',
+  },
+  {
+    title: 'Common Sense Guide to Mitigating Insider Threats, Seventh Edition',
+    publisher: 'Carnegie Mellon SEI',
+    href: 'https://www.sei.cmu.edu/library/common-sense-guide-to-mitigating-insider-threats-seventh-edition/',
+    contribution: 'Grounds workforce lifecycle controls, access reviews, reporting routes, monitoring governance, and coordinated response practices.',
+  },
+  {
+    title: 'Understanding Insider Threat: A Framework for Characterising Attacks',
+    publisher: 'Nurse et al., IEEE Security and Privacy Workshops (2014)',
+    href: 'https://doi.org/10.1109/SPW.2014.38',
+    contribution: 'Supports reconstructing actor, action, system, asset, and contextual factors as a timeline instead of relying on one indicator.',
+  },
+  {
+    title: 'Automated Insider Threat Detection System Using User and Role-Based Profile Assessment',
+    publisher: 'Legg et al., IEEE Systems Journal (2017)',
+    href: 'https://doi.org/10.1109/JSYST.2015.2438442',
+    contribution: 'Supports role-aware technical baselines and multi-event corroboration while leaving judgement to an accountable review process.',
+  },
+  {
+    title: 'Combining Traditional Cyber Security Audit Data with Psychosocial Data',
+    publisher: 'Greitzer & Frincke (2010)',
+    href: 'https://doi.org/10.1007/978-1-4419-7133-3_5',
+    contribution: 'Motivates multidisciplinary correlation, but also reinforces why psychosocial context must be governed, proportionate, explainable, and never treated as proof of intent.',
+  },
+] as const;
+
+const workforceIndicatorGroups = [
+  ['Lifecycle', 'Joiner, mover, notice, leave, termination, and contractor dates; capture the event and control deadline, not an unnecessary reason.'],
+  ['Role and access context', 'Role, manager, team, location, privileged duties, approved access profile, conflicts, exceptions, and segregation-of-duties context.'],
+  ['Control completion', 'Access recertification, session revocation, offboarding tasks, device return, sponsor confirmation, and exception approvals.'],
+  ['Structured case context', 'Approved referral type, policy/training acknowledgement, formal conflict disclosure, case status, owner, approver, and retention class.'],
+  ['Corroborating evidence', 'Identity, SaaS, DLP, endpoint, file, network, physical-access, ticket, and business-process evidence aligned on a timeline.'],
+  ['Governance', 'Lawful purpose, minimum necessary fields, access audit, retention, correction/appeal, multidisciplinary review, and documented human decision.'],
+] as const;
 
 const defaultAssessmentMetadata: AssessmentMetadata = {
   name: 'Untitled assessment',
@@ -67,13 +116,14 @@ const defaultAssessmentMetadata: AssessmentMetadata = {
 const guideAssessmentMetadata: AssessmentMetadata = {
   name: 'Example evidence gap assessment',
   owner: 'Security operations',
-  notes: 'Example data for the new user guide.',
+  notes: 'Synthetic example data for Demo mode.',
   scope: 'Evidence available for priority security investigations.',
 };
 
 function App() {
   const [activeView, setActiveView] = useState<PrimaryView>('Overview');
   const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk register');
+  const [showDemoDialog, setShowDemoDialog] = useState(false);
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('real');
   const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('real'));
   const [remediationState, setRemediationState] = useState<RemediationState>(() => createBlankRemediationState());
@@ -404,19 +454,48 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <a className="hub-link" href="/" aria-label="Security Engineering Hub">
-          <span className="hub-mark" aria-hidden="true">S6</span>
-          <span>Security Engineering Hub</span>
+          <img className="s6-logo" src={`${import.meta.env.BASE_URL}s6-security-labs-logo.svg`} alt="S6 Security Labs" />
+          <span className="hub-label">Security Engineering Hub</span>
         </a>
-        <h1>Gaps Analysis Tool <small>by S6</small></h1>
-        <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => setMode(assessmentMode === 'demo' ? 'real' : 'demo')}>
-          {assessmentMode === 'demo' ? 'Exit guide' : 'New user guide'}
+        <div className="app-title">
+          <span>Evidence readiness assessment</span>
+          <h1>Gaps Analysis Tool <small>by S6</small></h1>
+        </div>
+        <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => assessmentMode === 'demo' ? setMode('real') : setShowDemoDialog(true)}>
+          {assessmentMode === 'demo' ? 'Exit demo' : 'Demo'}
         </button>
       </header>
       {assessmentMode === 'demo' && (
-        <aside className="guide-notice" aria-label="New user guide">
-          <strong>Example data is loaded.</strong>
-          <span>Use it to explore the workflow. Exit the guide before starting a real assessment.</span>
+        <aside className="guide-notice" aria-label="Demo mode">
+          <strong>Demo data is loaded.</strong>
+          <span>Use it to explore the workflow. Exit demo to restore your real assessment exactly as you left it.</span>
         </aside>
+      )}
+      {showDemoDialog && (
+        <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setShowDemoDialog(false)}>
+          <section
+            className="demo-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="demo-dialog-title"
+            aria-describedby="demo-dialog-description"
+            tabIndex={-1}
+            onKeyDown={(event) => event.key === 'Escape' && setShowDemoDialog(false)}
+          >
+            <p className="eyebrow">Demonstration mode</p>
+            <h2 id="demo-dialog-title">Explore the tool with example data</h2>
+            <p id="demo-dialog-description">Demo loads synthetic evidence, assessment details, and remediation examples so you can follow each step and see how the report works.</p>
+            <ul className="prose-list">
+              <li>Your current assessment is saved in memory before demo data is shown.</li>
+              <li>Changes made in demo stay isolated from your real assessment and exports.</li>
+              <li>Choose <strong>Exit demo</strong> at any time to restore your work.</li>
+            </ul>
+            <div className="button-row demo-dialog-actions">
+              <button autoFocus onClick={() => setShowDemoDialog(false)}>Cancel</button>
+              <button className="primary-action" onClick={() => { setMode('demo'); setShowDemoDialog(false); }}>Show demo data</button>
+            </div>
+          </section>
+        </div>
       )}
 
 
@@ -567,6 +646,7 @@ function App() {
                 onQueryChange={setQuery}
               />
             )}
+            {activeReferenceView === 'Research basis' && <ResearchBasisPanel />}
             {activeReferenceView === 'Definitions' && <GlossaryPanel query={glossaryQuery} onQueryChange={setGlossaryQuery} />}
           </section>
         )}
@@ -1540,6 +1620,55 @@ function ReportHubPanel({
         )}
       </div>
     </section>
+  );
+}
+
+function ResearchBasisPanel() {
+  return (
+    <div className="workspace-stack research-basis">
+      <section className="panel">
+        <div className="panel-title-row">
+          <div>
+            <p className="eyebrow">Insider-threat programme foundation</p>
+            <h2>Research basis and indicator boundaries</h2>
+            <p className="tight-copy">MITRE, CISA, SEI, and peer-reviewed research support combining workforce, organisational, technical, physical, and case evidence. They do not justify an opaque employee guilt score.</p>
+          </div>
+        </div>
+        <div className="callout neutral">
+          <strong>Assessment rule</strong>
+          <p>Use workforce context to trigger proportionate human review. Require corroborating activity or control evidence before escalation, record competing explanations, and keep the final decision attributable to an authorised multidisciplinary team.</p>
+        </div>
+        <div className="research-grid" aria-label="Workforce and organisational indicator groups">
+          {workforceIndicatorGroups.map(([title, description]) => (
+            <article className="research-card" key={title}>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title-row">
+          <div>
+            <p className="eyebrow">Sources reviewed</p>
+            <h2>Primary guidance and scholarly research</h2>
+            <p className="tight-copy">These references shape the catalogue and its safeguards. Local law, industrial instruments, employment agreements, and privacy review still control implementation.</p>
+          </div>
+        </div>
+        <div className="research-source-list">
+          {insiderThreatResearch.map((source) => (
+            <article className="research-source" key={source.href}>
+              <div>
+                <h3><a href={source.href} target="_blank" rel="noreferrer">{source.title}</a></h3>
+                <p className="muted">{source.publisher}</p>
+              </div>
+              <p>{source.contribution}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 

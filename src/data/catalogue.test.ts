@@ -4,7 +4,7 @@ import { catalogue, logSources, riskVectors } from './catalogue';
 
 describe('threat-scenario catalogue data', () => {
   it('exposes non-empty sources and risk vectors', () => {
-    expect(catalogue.version).toBe('0.3.0');
+    expect(catalogue.version).toBe('0.4.0');
     expect(logSources.length).toBeGreaterThan(0);
     expect(riskVectors.length).toBeGreaterThan(0);
   });
@@ -39,6 +39,22 @@ describe('threat-scenario catalogue data', () => {
     expect(logSources.find((source) => source.id === 'email')?.verificationChecks.some((check) => check.id === 'email-login-logout')).toBe(true);
     expect(catalogue.threatFlow.length).toBeGreaterThan(3);
     expect(catalogue.threatScenarios.length).toBeGreaterThan(3);
+  });
+
+  it('models workforce indicators as governed context rather than employee scoring', () => {
+    const workforce = logSources.find((source) => source.id === 'hr-case');
+    expect(workforce?.name).toMatch(/Workforce lifecycle/i);
+    expect(workforce?.verificationChecks.map((check) => check.id)).toEqual(expect.arrayContaining([
+      'hr-lifecycle-dates',
+      'hr-role-context',
+      'hr-transition-controls',
+      'hr-referral-governance',
+      'hr-access-controls',
+    ]));
+    expect(workforce?.collectionNotes).toMatch(/human review/i);
+    expect(workforce?.collectionNotes).toMatch(/Exclude medical details/i);
+    expect(riskVectors.find((vector) => vector.id === 'workforce-transition-control-failure')?.techniqueAlignment).toMatch(/not.*proof/i);
+    expect(catalogue.note).toMatch(/not prediction or standalone proof/i);
   });
 
   it('references only defined vector and source IDs from scenarios, with no orphaned vectors', () => {

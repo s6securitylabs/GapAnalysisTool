@@ -8,7 +8,7 @@ import { buildScenarioOutcome, postureLabels, type StageOutcome } from '../lib/t
 import type { LogSource, LogSourceId } from '../data/catalogue';
 
 /**
- * 2D Attack Chain Map — the authoritative view.
+ * Primary Attack Chain Map — the authoritative view.
  *
  * Everything the assessment claims is legible here: stage by stage, what the actor does,
  * what evidence exists, what each control actually does, which gaps are open and of what
@@ -60,7 +60,7 @@ export function AttackChainMap({
       </div>
 
       <details className="visual-legend attack-chain-legend" open>
-        <summary>2D map legend</summary>
+        <summary>Primary view legend</summary>
         <div className="legend-grid compact-legend">
           <div><span className="legend-swatch covered" /> Covered / stopped</div>
           <div><span className="legend-swatch unresolved" /> Gap or partial evidence</div>

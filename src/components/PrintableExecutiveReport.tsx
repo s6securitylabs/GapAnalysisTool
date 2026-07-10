@@ -67,7 +67,7 @@ export function PrintableExecutiveReport({
         {mode === 'demo' && <div className="demo-report-banner" role="note">Demo — synthetic data</div>}
         <header className="report-cover report-page">
           <div className="report-brand-row">
-            <div className="report-brand"><span>S6</span><div><strong>Gaps Analysis Tool</strong><small>by S6</small></div></div>
+            <div className="report-brand"><img src={`${import.meta.env.BASE_URL}s6-security-labs-logo.svg`} alt="S6 Security Labs" /><div><strong>Gaps Analysis Tool</strong><small>Evidence readiness assessment</small></div></div>
             <span className={`report-rag report-rag-${report.rag}`}>{report.rag.toUpperCase()}</span>
           </div>
           <div className="report-cover-grid">
@@ -78,7 +78,7 @@ export function PrintableExecutiveReport({
               <dl className="report-meta">
                 <div><dt>Owner</dt><dd>{metadata.owner || 'Unassigned'}</dd></div>
                 <div><dt>Scope</dt><dd>{metadata.scope || 'Not stated'}</dd></div>
-                <div><dt>Assessment</dt><dd>{mode === 'demo' ? 'Example guide data' : 'Real assessment'}</dd></div>
+                <div><dt>Assessment</dt><dd>{mode === 'demo' ? 'Demo — synthetic data' : 'Real assessment'}</dd></div>
                 <div><dt>Generated</dt><dd>{generatedAt.toLocaleString()}</dd></div>
               </dl>
             </div>

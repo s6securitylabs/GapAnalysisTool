@@ -18,7 +18,7 @@ import { ThreatSimulation } from './ThreatSimulation';
 /**
  * The Threat Model workspace: one canonical model, two renderers, one switch.
  *
- * The 2D Attack Chain Map is the default and the authority. The 3D Threat Simulation is
+ * The primary Attack Chain Map is the default and the authority. The 3D Threat Simulation is
  * progressive enhancement for workshops and exploration. Switching modes changes how the
  * model is drawn and never what it says.
  */
@@ -72,10 +72,10 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
         </div>
         <div className="mode-switch" role="group" aria-label="Visualisation mode">
           <button className={mode === '2d' ? 'active' : ''} aria-pressed={mode === '2d'} onClick={() => setMode('2d')}>
-            2D Attack Chain Map
+            Primary view
           </button>
           <button className={mode === '3d' ? 'active' : ''} aria-pressed={mode === '3d'} onClick={() => setMode('3d')}>
-            3D Threat Simulation
+            3D map <span className="alpha-badge">Alpha</span>
           </button>
         </div>
       </div>

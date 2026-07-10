@@ -22,7 +22,7 @@ import {
 } from '../lib/webgl';
 
 /**
- * 3D Threat Simulation — progressive enhancement over the 2D Attack Chain Map.
+ * 3D Threat Simulation — progressive enhancement over the primary Attack Chain Map.
  *
  * The scene is an abstract threat theatre: stage plinths along a chain, telemetry drawn as
  * light, gaps drawn as unlit ground, and controls that animate according to what they
@@ -31,7 +31,7 @@ import {
  * halt comes from the canonical threat model via `simulationTimeline`.
  *
  * If WebGL is unavailable, the fallback below renders the same timeline in SVG and points
- * back at the 2D map, which remains the authoritative and exportable view.
+ * back at the primary view, which remains authoritative and exportable.
  */
 
 const SPACING = 7.2;
@@ -515,7 +515,7 @@ export function ThreatSimulation({ scenario }: { scenario: ThreatScenario }) {
         />
         <ThreatSceneOverlay events={events} activeIndex={activeIndex} />
         <div className="sim-overlay">
-          <span className="sim-eyebrow">3D Threat Simulation</span>
+          <span className="sim-eyebrow">3D map · Alpha</span>
           <strong>{scenario.title}</strong>
           <small>{scenario.actor}</small>
         </div>
@@ -657,7 +657,7 @@ function ThreatSceneOverlay({ events, activeIndex }: { events: SimulationEvent[]
 function SimulationLegend() {
   return (
     <details className="visual-legend simulation-legend" open>
-      <summary>3D simulation legend</summary>
+      <summary>3D map legend · Alpha</summary>
       <div className="legend-grid compact-legend">
         <div><span className="legend-swatch actor" /> Moving actor / active stage</div>
         <div><span className="legend-swatch telemetry" /> Lit telemetry/evidence beam</div>
@@ -679,10 +679,10 @@ function SimulationFallback({ scenario, events }: { scenario: ThreatScenario; ev
   return (
     <div className="threat-simulation fallback">
       <div className="sim-fallback-notice" role="status">
-        <strong>3D Threat Simulation unavailable</strong>
+        <strong>3D map unavailable</strong>
         <p>
-          3D is not supported in this environment because WebGL is unavailable or blocked. Try the 3D Threat Simulation in a
-          modern browser with hardware acceleration and WebGL enabled, or use the 2D Attack Chain Map above instead.
+          The Alpha 3D map is not supported in this environment because WebGL is unavailable or blocked. Try it in a modern
+          browser with hardware acceleration and WebGL enabled, or use the primary view above instead.
         </p>
       </div>
 

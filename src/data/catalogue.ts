@@ -126,9 +126,12 @@ const logSourceVerification: Record<LogSourceId, LogVerificationCheck[]> = {
     { id: 'saas-admin-config', label: 'Admin/configuration and audit export changes', priority: 'recommended', verificationQuestion: 'Can we detect SaaS admin changes, audit-log disablement, retention changes, API token creation, and export jobs?', requiredFields: ['actor', 'adminAction', 'target', 'oldValue', 'newValue', 'timestamp'], objective: 'Detect privilege misuse and evidence tampering inside SaaS platforms.' },
   ],
   'hr-case': [
-    { id: 'hr-status-dates', label: 'Employment status, role, and offboarding dates', priority: 'critical', verificationQuestion: 'Do we have authoritative employment status, transfer/resignation/termination dates, manager, department, and role?', requiredFields: ['employeeId', 'status', 'role', 'department', 'manager', 'effectiveDate'], objective: 'Correlate activity with workforce risk windows and offboarding objectives.' },
-    { id: 'hr-case-context', label: 'Investigation/case and policy exception context', priority: 'recommended', verificationQuestion: 'Can approved investigators see relevant case IDs, policy exceptions, conflicts, training events, or legal holds with purpose limitation?', requiredFields: ['caseId', 'caseType', 'policyException', 'approval', 'legalHold', 'accessPurpose'], objective: 'Explain context without treating HR data as standalone proof.' },
-    { id: 'hr-access-controls', label: 'Privacy approval and access audit', priority: 'critical', verificationQuestion: 'Do we log who accessed HR/case context, under what approval, and for what investigation purpose?', requiredFields: ['viewer', 'approvalId', 'purpose', 'accessTime', 'caseId'], objective: 'Enforce privacy/legal governance for sensitive workforce data.' },
+    { id: 'hr-lifecycle-dates', label: 'Joiner, mover, leaver, and contractor lifecycle', priority: 'critical', verificationQuestion: 'Do we have authoritative start, transfer, notice, leave, resignation, termination, and contractor end dates without collecting reasons that are not needed for the investigation?', requiredFields: ['employeeId', 'workerType', 'status', 'startDate', 'effectiveDate', 'contractEndDate'], objective: 'Correlate technical activity to defined workforce transition windows and verify timely control changes.' },
+    { id: 'hr-role-context', label: 'Role, manager, team, location, and expected access', priority: 'critical', verificationQuestion: 'Can investigators verify the person’s current role, manager, department, work location, privileged duties, and approved access profile at the time of activity?', requiredFields: ['employeeId', 'role', 'department', 'manager', 'workLocation', 'accessProfile', 'effectiveDate'], objective: 'Distinguish legitimate job activity from access that is inconsistent with current duties or a recent move.' },
+    { id: 'hr-case-context', label: 'Governed case, policy, training, and conflict context', priority: 'recommended', verificationQuestion: 'Can approved investigators retrieve only relevant case IDs, formal policy exceptions, required training or acknowledgement status, declared conflicts, corrective actions, and legal holds?', requiredFields: ['caseId', 'caseType', 'policyException', 'trainingStatus', 'conflictDeclaration', 'legalHold', 'approvalId'], objective: 'Add documented organisational context without ingesting unrestricted HR notes or treating a workplace issue as proof of intent.' },
+    { id: 'hr-transition-controls', label: 'Transition control and access-review outcomes', priority: 'critical', verificationQuestion: 'Can we prove that access recertification, transfer/offboarding tasks, device return, session revocation, and exception approvals were completed on time?', requiredFields: ['employeeId', 'eventType', 'taskId', 'controlOwner', 'dueDate', 'completedAt', 'exceptionId'], objective: 'Detect control failures that leave unnecessary access available during joiner, mover, leaver, or contractor transitions.' },
+    { id: 'hr-referral-governance', label: 'Human referral and multidisciplinary review governance', priority: 'recommended', verificationQuestion: 'Are HR, legal, privacy, security, and physical-security referrals recorded with source, approval, minimum-necessary summary, review outcome, retention, and appeal or correction path?', requiredFields: ['referralId', 'referralSource', 'approvalId', 'purpose', 'reviewers', 'outcome', 'retentionUntil'], objective: 'Create an accountable human review process for contextual signals and prevent automated employee risk scoring.' },
+    { id: 'hr-access-controls', label: 'Privacy approval and access audit', priority: 'critical', verificationQuestion: 'Do we log who accessed workforce/case context, under what approval and lawful purpose, which fields were viewed, and when the access was reviewed?', requiredFields: ['viewer', 'approvalId', 'purpose', 'fieldsAccessed', 'accessTime', 'caseId', 'reviewDate'], objective: 'Enforce purpose limitation, least privilege, accountability, and review for sensitive workforce information.' },
   ],
   'physical-access': [
     { id: 'physical-entry-exit', label: 'Facility entry/exit and restricted-area access', priority: 'recommended', verificationQuestion: 'Do we have badge access data showing entry, exit where available, door/site, access result, and employee ID?', requiredFields: ['employeeId', 'badgeId', 'door', 'site', 'timestamp', 'accessResult'], objective: 'Correlate physical presence or restricted-area access with cyber activity.' },
@@ -145,7 +148,7 @@ const logSourceVerification: Record<LogSourceId, LogVerificationCheck[]> = {
     { id: 'cloud-api-token', label: 'API key/service account and anomalous client context', priority: 'optional', verificationQuestion: 'Can we identify API token/service-account use, client/user-agent, source network, and unusual tooling?', requiredFields: ['principal', 'accessKeyId', 'userAgent', 'sourceIp', 'apiOperation'], objective: 'Separate user actions from automated or delegated access.' },
   ],
   'siem-enrichment': [
-    { id: 'siem-entity-enrichment', label: 'Identity, asset, data, and peer-group enrichment', priority: 'recommended', verificationQuestion: 'Do correlated events carry user, asset, data sensitivity, role, peer group, criticality, and watchlist enrichment?', requiredFields: ['entityId', 'assetCriticality', 'userRisk', 'dataSensitivity', 'peerGroup', 'watchlist'], objective: 'Turn raw logs into investigation-ready risk context.' },
+    { id: 'siem-entity-enrichment', label: 'Identity, asset, data, role, and approved context enrichment', priority: 'recommended', verificationQuestion: 'Do correlated events carry identity, role, peer group, asset criticality, data sensitivity, and approved time-bounded transition or case context?', requiredFields: ['entityId', 'role', 'peerGroup', 'assetCriticality', 'dataSensitivity', 'contextType', 'contextEffectiveFrom', 'contextExpiresAt', 'approvalId'], objective: 'Turn raw logs into investigation-ready business context without treating an opaque person-risk score as evidence.' },
     { id: 'siem-correlation-health', label: 'Correlation health and telemetry freshness', priority: 'critical', verificationQuestion: 'Can we prove source freshness, parsing health, event volume drops, and normalization quality for each log source?', requiredFields: ['sourceId', 'lastSeen', 'parseStatus', 'eventVolume', 'dropRate', 'normalizationStatus'], objective: 'Avoid assuming a selected source is usable when ingestion or parsing is broken.' },
     { id: 'siem-retention-search', label: 'Retention and searchability by source', priority: 'critical', verificationQuestion: 'Can analysts search the needed fields for the required retention window and export evidence with chain-of-custody notes?', requiredFields: ['sourceId', 'retentionDays', 'searchableFields', 'exportMethod', 'caseId'], objective: 'Verify investigation readiness, not just collection existence.' },
   ],
@@ -226,11 +229,11 @@ export const logSources: LogSource[] = [
   },
   {
     id: 'hr-case',
-    name: 'HR / case management',
+    name: 'Workforce lifecycle / case context',
     category: 'Workforce context',
-    description: 'Employment status, manager, termination/resignation dates, investigation case notes, policy exceptions.',
-    commonFields: ['employeeId', 'status', 'department', 'manager', 'terminationDate', 'caseId'],
-    collectionNotes: 'Use least-privilege access and clear handling rules for sensitive personnel data.',
+    description: 'Governed joiner/mover/leaver dates, role and manager context, access-review outcomes, formal policy/training/exception records, and multidisciplinary case referrals.',
+    commonFields: ['employeeId', 'workerType', 'status', 'role', 'department', 'manager', 'effectiveDate', 'caseId', 'approvalId'],
+    collectionNotes: 'Use minimum-necessary structured fields, documented purpose, human review, access auditing, retention limits, and corroborating technical evidence. Exclude medical details, protected attributes, private communications, rumours, and unstructured performance notes.',
     verificationChecks: logSourceVerification['hr-case'],
   },
   {
@@ -264,9 +267,9 @@ export const logSources: LogSource[] = [
     id: 'siem-enrichment',
     name: 'SIEM enrichment',
     category: 'Analytics',
-    description: 'Asset, identity, geo, threat intel, watchlist, data classification, and UEBA enrichment used during correlation.',
-    commonFields: ['entityId', 'assetCriticality', 'userRisk', 'dataSensitivity', 'watchlist'],
-    collectionNotes: 'Enrichment improves triage but should not be counted as direct evidence by itself.',
+    description: 'Asset, identity, business role, peer baseline, data classification, approved case/transition context, and threat-intelligence enrichment used during correlation.',
+    commonFields: ['entityId', 'assetCriticality', 'dataSensitivity', 'role', 'peerGroup', 'contextType', 'approvalId'],
+    collectionNotes: 'Enrichment improves triage but is not direct evidence. Keep workforce context time-bounded, approval-backed, explainable, and separate from opaque employee risk scoring.',
     verificationChecks: logSourceVerification['siem-enrichment'],
   },
 ];
@@ -613,6 +616,34 @@ export const riskVectors: RiskVector[] = [
     ],
   },
   {
+    id: 'workforce-transition-control-failure',
+    domain: 'Workforce Transition / Governance',
+    name: 'Workforce transition coincides with access or control anomalies',
+    severity: 'high',
+    techniqueAlignment: 'Insider threat programme indicator: governed workforce-transition context correlated with observable cyber or control activity. ATT&CK techniques depend on the corroborating behaviour; workforce context alone is not an ATT&CK technique or proof of malicious intent.',
+    description: 'A joiner, mover, leaver, contractor end, formal access review, or approved case window overlaps with retained access, unusual collection, privilege use, or incomplete transition controls.',
+    investigationQuestions: [
+      {
+        id: 'q-workforce-transition-window',
+        question: 'Can we establish an authoritative transition window, current duties, expected access, and completion status for required controls?',
+        evidence: [
+          { sourceId: 'hr-case', strength: 'primary', rationale: 'Provides structured lifecycle, role, manager, access-review, and control-completion context under governed access.' },
+          { sourceId: 'idp-auth', strength: 'supporting', rationale: 'Shows whether roles, groups, sessions, or tokens changed in line with the workforce event.' },
+          { sourceId: 'privileged-admin', strength: 'supporting', rationale: 'Shows privileged access and approvals that may require recertification or removal.' },
+        ],
+      },
+      {
+        id: 'q-workforce-corroboration-governance',
+        question: 'Is the contextual signal purpose-limited, independently corroborated, and reviewed by authorised people before action?',
+        evidence: [
+          { sourceId: 'hr-case', strength: 'primary', rationale: 'Records approval, minimum-necessary context, referral provenance, human review, retention, and audit history.' },
+          { sourceId: 'siem-enrichment', strength: 'context', rationale: 'Correlates business role, asset criticality, and observable technical behaviour without becoming standalone evidence.' },
+          { sourceId: 'physical-access', strength: 'context', rationale: 'May corroborate a defined incident timeline when facility evidence is relevant and lawfully in scope.' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'physical-cyber-anomaly',
     domain: 'Physical / Cyber Correlation',
     name: 'Physical access anomaly near cyber activity',
@@ -711,14 +742,15 @@ export const threatScenarios: ThreatScenario[] = [
   { id: 'shadow-it-oauth', title: 'Shadow IT OAuth data exposure', objective: 'Detect unapproved app consent and determine whether the app accessed mail, files, or SaaS data.', flowStepIds: ['access', 'collection', 'transfer'], vectorIds: ['oauth-shadow-it', 'email-exfil-forwarding'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['email', 'dlp', 'proxy-dns'] },
   { id: 'business-system-fraud', title: 'Business-system fraud or record tampering', objective: 'Show who changed records, whether approvals were bypassed, and what business impact resulted.', flowStepIds: ['access', 'impact', 'concealment'], vectorIds: ['business-record-tamper', 'mass-role-escalation'], criticalSources: ['saas-audit', 'idp-auth'], recommendedSources: ['hr-case', 'siem-enrichment', 'privileged-admin'] },
   { id: 'compromised-account-driven', title: 'Compromised or outsmarted user', objective: 'Differentiate intentional internal misuse from phishing, token theft, social engineering, or malware-driven activity.', flowStepIds: ['access', 'collection', 'transfer'], vectorIds: ['compromised-outsmarted-user', 'negligent-mistaken-disclosure'], criticalSources: ['idp-auth', 'endpoint-edr'], recommendedSources: ['email', 'saas-audit', 'dlp'] },
+  { id: 'workforce-transition-review', title: 'Workforce transition / access review', objective: 'Correlate a joiner, mover, leaver, contractor, or formal case window with observable control completion and technical evidence under strict privacy governance.', flowStepIds: ['trigger', 'access', 'discovery', 'collection'], vectorIds: ['workforce-transition-control-failure', 'access-retained-post-term', 'unusual-valid-access'], criticalSources: ['hr-case', 'idp-auth'], recommendedSources: ['privileged-admin', 'siem-enrichment', 'saas-audit', 'physical-access'] },
   { id: 'physical-cyber-correlation', title: 'Physical/cyber anomaly', objective: 'Correlate badge/facility evidence with device, VPN, and identity sessions without treating location as standalone proof.', flowStepIds: ['trigger', 'access', 'collection'], vectorIds: ['physical-cyber-anomaly'], criticalSources: ['idp-auth'], recommendedSources: ['physical-access', 'vpn', 'endpoint-edr'] },
   { id: 'removable-media-exfil', title: 'Removable-media (USB) exfiltration', objective: 'Prove whether sensitive files were staged or copied to USB/removable media outside normal duties, and by which device and user.', flowStepIds: ['trigger', 'discovery', 'collection', 'transfer'], vectorIds: ['removable-media-exfil'], criticalSources: ['endpoint-edr'], recommendedSources: ['file-access', 'dlp', 'hr-case'] },
   { id: 'collusion-ring', title: 'Cross-user collusion', objective: 'Reconstruct a multi-user timeline of coordinated access, collection, transfer, or approval bypass across multiple users.', flowStepIds: ['trigger', 'access', 'discovery', 'collection', 'transfer'], vectorIds: ['collusion-cross-user'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['file-access', 'hr-case', 'siem-enrichment'] },
 ];
 
 export const catalogue: Catalogue = {
-  version: '0.3.0',
-  summary: 'Evidence and investigation-readiness mappings. Validate technique mappings against your environment.',
+  version: '0.4.0',
+  summary: 'Evidence and investigation-readiness mappings, including privacy-governed workforce and organisational context. Validate technique mappings against your environment.',
   note: 'Evidence coverage and investigation readiness catalogue. Contextual signals require governance and corroboration, not prediction or standalone proof.',
   logSources,
   riskVectors,
