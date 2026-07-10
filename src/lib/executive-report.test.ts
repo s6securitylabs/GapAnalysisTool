@@ -30,6 +30,8 @@ describe('executive report builder', () => {
 
     expect(report.plainEnglishSummary).toContain('Overall readiness');
     expect(report.strengths.length).toBeGreaterThan(0);
+    expect(report.topGaps[0]).toMatch(/evidence readiness, priority index/i);
+    expect(report.topGaps.join(' ')).not.toMatch(/accountable owner/i);
     expect(report.markdown).toContain('# Gaps Analysis Tool Report Summary');
     expect(report.markdown).toContain('Demo assessment');
   });

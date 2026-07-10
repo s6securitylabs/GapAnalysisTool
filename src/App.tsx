@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { ThreatModelPanel } from './components/ThreatModelPanel';
+import { PrintableExecutiveReport } from './components/PrintableExecutiveReport';
 import { catalogue, type ThreatScenario, type LogSource, type LogSourceId } from './data/catalogue';
 import { glossary } from './data/glossary';
 import { sourceMetadata, type RemediationRecord } from './data/source-metadata';
@@ -84,6 +85,7 @@ function App() {
   const [glossaryQuery, setGlossaryQuery] = useState('');
   const [snapshots, setSnapshots] = useState<AssessmentSnapshot[]>(() => loadSnapshots(window.localStorage));
   const [selectedSnapshotId, setSelectedSnapshotId] = useState('');
+  const [showPrintableReport, setShowPrintableReport] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const preGuideState = useRef<{
     metadata: AssessmentMetadata;
@@ -383,6 +385,22 @@ function App() {
     event.target.value = '';
   }
 
+  if (showPrintableReport) {
+    return (
+      <PrintableExecutiveReport
+        metadata={metadata}
+        mode={assessmentMode}
+        summary={summary}
+        report={executiveReport}
+        verificationSummary={verificationSummary}
+        scenarioStatuses={scenarioStatuses}
+        remediationState={remediationState}
+        onClose={() => setShowPrintableReport(false)}
+        onPrint={() => window.print()}
+      />
+    );
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -515,6 +533,7 @@ function App() {
             onExportGapsCsv={exportGapsCsv}
             onExportMarkdown={exportExecutiveMarkdown}
             onExportSnapshot={exportSnapshotJson}
+            onOpenPrintableReport={() => setShowPrintableReport(true)}
             onSelect={setSelectedSnapshotId}
             onImportClick={() => importRef.current?.click()}
           />
@@ -605,7 +624,7 @@ function OverviewPanel({
             <p className="eyebrow">Overview</p>
             <h2>Assessment details and current evidence coverage</h2>
           </div>
-          <div className="button-row">
+          <div className="button-row overview-actions">
             <button onClick={onOpenScope}>Open scope step</button>
             <button className="primary-action" onClick={onOpenReportHub}>
               Review report
@@ -632,7 +651,7 @@ function OverviewPanel({
         </div>
         <div className="metric-grid">
           <Metric label="Overall readiness" value={formatPercent(summary.overallScore)} />
-          <Metric label="High/critical gaps" value={summary.highRiskGapCount.toString()} />
+          <Metric label="Material risk gaps" value={summary.highRiskGapCount.toString()} />
           <Metric label="Ready sources" value={verificationStats.investigationReadySources.toString()} />
           <Metric label="Accepted risk" value={verificationStats.acceptedRiskSources.toString()} />
         </div>
@@ -744,7 +763,7 @@ function ScopePanel(props: {
           <Metric label="Coverage" value={formatPercent(props.summary.overallScore)} />
           <Metric label="Ready sources" value={readySources.toString()} />
           <Metric label="Accepted risk" value={props.verificationStats.acceptedRiskSources.toString()} />
-          <Metric label="High/critical gaps" value={props.summary.highRiskGapCount.toString()} />
+          <Metric label="Material risk gaps" value={props.summary.highRiskGapCount.toString()} />
         </div>
         <ul className="prose-list">
           <li>Define which business areas and log domains are in scope.</li>
@@ -1305,6 +1324,10 @@ function GapAnalysisPanel({
   ) => void;
 }) {
   const missingSources = summary.topMissingSources.slice(0, 8);
+  const priorityGaps = summary.vectors
+    .filter((item) => item.score < 0.8)
+    .sort((a, b) => b.riskGapScore - a.riskGapScore)
+    .slice(0, 8);
   const remediationStats = buildRemediationStats(
     remediationState,
     missingSources.map((item) => item.sourceId),
@@ -1316,19 +1339,41 @@ function GapAnalysisPanel({
         <div className="panel-title-row">
           <div>
             <p className="eyebrow">Gap Analysis</p>
-            <h2>Prioritized remediation backlog with owners, dates, and privacy caveats</h2>
-            <p className="tight-copy">Use the report step for exports and saved assessments. Track follow-up work in the cards below.</p>
+            <h2>Prioritised investigation gaps and evidence improvements</h2>
+            <p className="tight-copy">Risk gaps are investigation paths below 80% verified evidence readiness. Source actions show which evidence improvements close the most risk.</p>
           </div>
           <button className="primary-action" onClick={onOpenReportHub}>
             Review report
           </button>
         </div>
         <div className="metric-grid compact-metrics">
-          <Metric label="High/critical gaps" value={summary.highRiskGapCount.toString()} />
+          <Metric label="Material risk gaps" value={summary.highRiskGapCount.toString()} />
           <Metric label="Open actions" value={remediationStats.open.toString()} />
           <Metric label="Blocked / overdue" value={`${remediationStats.blocked} / ${remediationStats.overdue}`} />
           <Metric label="Governance warnings" value={(remediationStats.missingAccountability + remediationStats.missingValidationEvidence).toString()} />
         </div>
+      </div>
+      <section className="panel">
+        <div className="panel-title-row compact">
+          <div><p className="eyebrow">Priority gaps</p><h2>Investigation paths with the greatest remaining risk</h2></div>
+          <span className="pill missing-pill">{summary.vectors.filter((item) => item.score < 0.8).length} below target</span>
+        </div>
+        <div className="priority-gap-grid">
+          {priorityGaps.map((gap, index) => (
+            <article className="priority-gap-card" key={gap.vector.id}>
+              <div className="priority-gap-rank">{String(index + 1).padStart(2, '0')}</div>
+              <div className="priority-gap-copy">
+                <div className="panel-title-row compact"><h3>{gap.vector.name}</h3><span className={`pill severity ${gap.vector.severity}`}>{gap.vector.severity}</span></div>
+                <p>{gap.vector.domain} · {formatPercent(gap.score)} evidence readiness</p>
+                <div className="gap-progress" aria-label={`${gap.vector.name} ${formatPercent(gap.score)} ready`}><i style={{ width: formatPercent(gap.score) }} /></div>
+                <small>Missing: {gap.missingSources.slice(0, 3).map((sourceId) => catalogue.logSources.find((source) => source.id === sourceId)?.name ?? sourceId).join(', ') || 'supporting evidence'} · Priority index {gap.riskGapScore.toFixed(1)}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <div className="panel-title-row compact source-actions-heading">
+        <div><p className="eyebrow">Source actions</p><h2>Evidence improvements with the broadest impact</h2></div>
       </div>
       <div className="backlog-grid">
         {missingSources.map((item) => {
@@ -1351,7 +1396,7 @@ function GapAnalysisPanel({
                 <span>Status {remediation.status}</span>
               </div>
               <p className="muted">
-                Impacts {item.count} mapped vectors · weighted gap {item.weightedGap.toFixed(2)}
+                Improves {item.count} mapped investigation paths · combined priority impact {item.weightedGap.toFixed(1)}
               </p>
               <div className="compact-list">
                 <div className="list-card impact-card positive-impact">
@@ -1432,6 +1477,7 @@ function ReportHubPanel({
   onExportGapsCsv,
   onExportMarkdown,
   onExportSnapshot,
+  onOpenPrintableReport,
   onSelect,
   onImportClick,
 }: {
@@ -1445,6 +1491,7 @@ function ReportHubPanel({
   onExportGapsCsv: () => void;
   onExportMarkdown: () => void;
   onExportSnapshot: () => void;
+  onOpenPrintableReport: () => void;
   onSelect: (id: string) => void;
   onImportClick: () => void;
 }) {
@@ -1457,7 +1504,10 @@ function ReportHubPanel({
             <h2>Export results and compare saved assessments</h2>
           </div>
           <div className="button-row">
-            <button className="primary-action" onClick={onExportMarkdown}>
+            <button className="primary-action" onClick={onOpenPrintableReport}>
+              Open printable executive report
+            </button>
+            <button onClick={onExportMarkdown}>
               Export Markdown report
             </button>
             <button onClick={onExportGapsCsv}>Export gaps CSV</button>
@@ -1617,7 +1667,7 @@ function describeSourceStatus(verification: SourceVerificationSummary) {
     return { label: 'Accepted risk', tone: 'warning-pill' };
   }
   if (verification.readinessScore === 0) {
-    return { label: 'High/critical gaps', tone: 'missing-pill' };
+    return { label: 'No usable evidence', tone: 'missing-pill' };
   }
   return { label: `Partial (${formatPercent(verification.readinessScore)} ready)`, tone: 'info-pill' };
 }

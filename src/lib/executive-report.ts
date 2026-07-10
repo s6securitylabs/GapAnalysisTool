@@ -35,11 +35,11 @@ export function buildExecutiveReport(params: {
     return item && !item.effective && item.readinessScore > 0;
   });
   const acceptedRiskSources = sources.filter((source) => verificationSummary.get(source.id)?.acceptedRisk);
-  const topGaps = summary.topMissingSources.slice(0, 5).map((item) => {
-    const source = sources.find((entry) => entry.id === item.sourceId);
-    const plan = remediationFor(item.sourceId);
-    return `${source?.name ?? item.sourceId}: impacts ${item.count} vectors, weighted gap ${item.weightedGap.toFixed(1)}, accountable owner ${plan.gapOwner}, engineering owner ${plan.engineeringOwner}, target ${plan.targetDate}, status ${plan.status}`;
-  });
+  const topGaps = summary.vectors
+    .filter((item) => item.score < 0.8)
+    .sort((a, b) => b.riskGapScore - a.riskGapScore)
+    .slice(0, 5)
+    .map((item) => `${item.vector.name}: ${item.vector.severity} risk, ${formatPercent(item.score)} evidence readiness, priority index ${item.riskGapScore.toFixed(1)}.`);
   const weakestVectors = summary.vectors
     .filter((item) => item.score < 0.8)
     .sort((a, b) => b.riskGapScore - a.riskGapScore)

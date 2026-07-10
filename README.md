@@ -22,9 +22,11 @@ The tool is an assessment workspace, not a monitoring or case-management system.
 
 Coverage means that required evidence is both usable and verified. Owning a product or collecting a log is not enough: critical checks and investigation-ready maturity are required. Accepted risk remains visible and contributes no coverage.
 
-The 2D attack-chain map is the authoritative review and export view. The 3D simulation is an optional presentation of the same static model and must not introduce independent coverage facts.
+The 2D attack-chain map and optional 3D simulation present the same scenario model. Neither creates separate coverage facts.
 
 The UI presents one ordered workflow: Overview, Scope, Source Readiness, Attack Scenarios, Gaps, Report, then References. A new assessment starts with blank evidence. The optional **New user guide** loads example data for exploration. The attack-scenario library contains 12 scenarios: nine insider/workforce scenarios and three external cyber scenarios. Scenario detail includes indicative MITRE ATT&CK references where they fit; accidental and other non-adversarial events are not forced into ATT&CK mappings.
+
+The Gaps step separates material investigation-path gaps from the source improvements needed to close them. The Report step provides Markdown, CSV, and JSON exports plus a polished printable HTML executive report with readiness graphics, risk distribution, domain coverage, weakest attack paths, and priority actions. Browser print can save the report as an A4 PDF.
 
 Each log source explains why the evidence is wanted, the positive investigation or SOC-engineering impact it can create, and the negative impact or caveat that should constrain collection. This keeps analyst value, privacy, cost, and false-confidence tradeoffs visible in the same place as readiness scoring.
 

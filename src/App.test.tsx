@@ -284,8 +284,31 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('button', { name: /Export Markdown report/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Export gaps CSV/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Export JSON snapshot/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open printable executive report/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Save locally/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Import snapshot/i })).toBeInTheDocument();
+  });
+
+  it('renders a polished printable executive report from the current assessment', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
+    await userEvent.click(screen.getByRole('button', { name: /New user guide/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Open printable executive report/i }));
+
+    expect(screen.getByRole('main')).toHaveClass('print-report-view');
+    expect(screen.getByRole('heading', { name: /Example evidence gap assessment/i })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Overall readiness/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Where the organisation is exposed/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Priority investigation gaps/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Priority evidence improvements/i })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Print or save PDF/i }));
+    expect(print).toHaveBeenCalledOnce();
+    await userEvent.click(screen.getByRole('button', { name: /Back to assessment/i }));
+    expect(screen.getByRole('navigation', { name: /Assessment steps/i })).toBeInTheDocument();
+    print.mockRestore();
   });
 
   it('provides an editable remediation lifecycle with accountability and validation evidence', async () => {
@@ -293,6 +316,8 @@ describe('App integrated assessment experience', () => {
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
 
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Gaps/i }));
+    expect(screen.getByRole('heading', { name: /Investigation paths with the greatest remaining risk/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Evidence improvements with the broadest impact/i })).toBeInTheDocument();
     await userEvent.click(screen.getAllByText('Update remediation record')[0]);
 
     expect(screen.getAllByLabelText('Accountable owner').length).toBeGreaterThan(0);
