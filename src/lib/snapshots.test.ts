@@ -89,6 +89,43 @@ describe('snapshot helpers', () => {
     expect(migrated.catalogueVersion).toBe(catalogue.version);
   });
 
+  it('retains existing split-source provenance and records legacy provenance on a collision', () => {
+    const migrated = migrateSnapshot({
+      id: 'legacy-workforce-collision',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      catalogueVersion: 'seed-0.3.0',
+      mode: 'real',
+      metadata: { name: 'Workforce', owner: 'Ops', notes: '', scope: 'Review' },
+      sourceState: {
+        'hr-case': {
+          maturity: 'investigation-ready',
+          verifiedCheckIds: ['hr-status-dates'],
+          evidenceReference: 'Legacy case file 12',
+          validatedBy: 'Legacy investigator',
+          validatedAt: '2026-01-01',
+        },
+        'workforce-lifecycle': {
+          maturity: 'investigation-ready',
+          verifiedCheckIds: ['hr-role-context'],
+          evidenceReference: 'Current lifecycle export',
+          validatedBy: 'Current reviewer',
+          validatedAt: '2026-02-01',
+        },
+      } as never,
+      remediationState: {} as never,
+    });
+
+    const lifecycle = migrated.sourceState['workforce-lifecycle'];
+    expect(lifecycle.evidenceReference).toBe('Current lifecycle export');
+    expect(lifecycle.validatedBy).toBe('Current reviewer');
+    expect(lifecycle.verifiedCheckIds).toEqual(
+      expect.arrayContaining(['hr-role-context', 'hr-lifecycle-dates']),
+    );
+    expect(migrated.migrationNotes?.join(' ')).toContain('Legacy case file 12');
+    expect(migrated.migrationNotes?.join(' ')).toContain('Legacy investigator');
+    expect(migrated.migrationNotes?.join(' ')).toContain('existing workforce-lifecycle provenance remains the current record');
+  });
+
   it('stores the latest snapshot in local storage order', () => {
     const storage = new Map<string, string>();
     const fakeStorage = {

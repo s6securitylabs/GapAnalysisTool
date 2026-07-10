@@ -150,6 +150,20 @@ function fanOutLegacyHrCase(
         ...existing,
         verifiedCheckIds: [...new Set([...(existing.verifiedCheckIds ?? []), ...inheritedChecks])],
       };
+
+      // SourceAssessmentState has one current provenance record. Do not overwrite
+      // a newer split-source record with legacy data, but do preserve the legacy
+      // provenance in the visible migration record rather than losing it silently.
+      if (inheritedChecks.length > 0 && (legacy.evidenceReference || legacy.validatedBy || legacy.validatedAt)) {
+        const legacyProvenance = [
+          legacy.evidenceReference && `evidence reference “${legacy.evidenceReference}”`,
+          legacy.validatedBy && `validated by ${legacy.validatedBy}`,
+          legacy.validatedAt && `on ${legacy.validatedAt}`,
+        ].filter(Boolean).join(', ');
+        notes.push(
+          `Source hr-case: preserved legacy provenance for ${target} in this migration note (${legacyProvenance}); the existing ${target} provenance remains the current record.`,
+        );
+      }
     } else {
       sourceState[target] = emptySourceState({
         maturity: legacy.maturity,
