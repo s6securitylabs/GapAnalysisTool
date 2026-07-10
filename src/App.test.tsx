@@ -377,6 +377,7 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('heading', { name: /Priority evidence improvements/i })).toBeInTheDocument();
     expect(screen.getByText(/Strong blocking controls would prevent the path/i)).toBeInTheDocument();
     expect(screen.getByText(/Strong containment would stop it after detection/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gaps Analysis Tool is an evidence-readiness assessment workspace/i)).toBeInTheDocument();
     expect(screen.queryByText(/Gaps Analysis Tool by S6/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/critical controls stopped|Stopped \/ investigable/i)).not.toBeInTheDocument();
 

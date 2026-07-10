@@ -241,6 +241,7 @@ export function PrintableExecutiveReport({
             })}
           </div>
           <footer className="report-footer">
+            <div><strong>About this tool</strong><p>Gaps Analysis Tool is an evidence-readiness assessment workspace for defining scope, verifying investigation evidence, prioritising material gaps, and assigning accountable remediation. It does not ingest events, determine intent, or prove wrongdoing.</p></div>
             <div><strong>Decision note</strong><p>{metadata.notes || 'No additional decision note was recorded.'}</p></div>
             <div><strong>Evidence boundary</strong><p>Strong blocking controls would prevent the path. Strong containment would stop it after detection. Evidence readiness means investigators could prove what happened; it does not prove wrongdoing.</p></div>
             <small>Assessment model {catalogue.version} · Generated {generatedAt.toISOString()}</small>
