@@ -461,16 +461,29 @@ function App() {
         </a>
         <div className="app-title">
           <span>Evidence readiness assessment</span>
-          <h1>Gaps Analysis Tool <small>by S6</small></h1>
+          <h1>Gaps Analysis Tool</h1>
         </div>
-        <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => assessmentMode === 'demo' ? setMode('real') : setShowDemoDialog(true)}>
-          {assessmentMode === 'demo' ? 'Exit demo' : 'Demo'}
-        </button>
+        <div className="mode-switch" role="group" aria-label="Assessment mode">
+          <button
+            className={assessmentMode === 'real' ? 'active' : ''}
+            aria-pressed={assessmentMode === 'real'}
+            onClick={() => setMode('real')}
+          >
+            Live
+          </button>
+          <button
+            className={assessmentMode === 'demo' ? 'active' : ''}
+            aria-pressed={assessmentMode === 'demo'}
+            onClick={() => assessmentMode === 'demo' ? setMode('real') : setShowDemoDialog(true)}
+          >
+            Demo
+          </button>
+        </div>
       </header>
       {assessmentMode === 'demo' && (
         <aside className="guide-notice" aria-label="Demo mode">
           <strong>Demo data is loaded.</strong>
-          <span>Use it to explore the workflow. Exit demo to restore your real assessment exactly as you left it.</span>
+          <span>Use it to explore the workflow. Switch to Live to restore your real assessment exactly as you left it.</span>
         </aside>
       )}
       {snapshotMigrationNotes.length > 0 && (
@@ -551,12 +564,8 @@ function App() {
             metadata={metadata}
             updateMetadata={updateMetadata}
             summary={summary}
-            report={executiveReport}
             verificationStats={verificationStats}
-            verificationDebt={verificationDebt}
-            scenarioStatuses={scenarioStatuses}
             onOpenScope={() => setActiveView('Scope')}
-            onOpenReportHub={() => setActiveView('Report')}
           />
         )}
 
@@ -672,36 +681,30 @@ function OverviewPanel({
   metadata,
   updateMetadata,
   summary,
-  report,
   verificationStats,
-  verificationDebt,
-  scenarioStatuses,
   onOpenScope,
-  onOpenReportHub,
 }: {
   metadata: AssessmentMetadata;
   updateMetadata: <K extends keyof AssessmentMetadata>(key: K, value: AssessmentMetadata[K]) => void;
   summary: CoverageSummary;
-  report: ReturnType<typeof buildExecutiveReport>;
   verificationStats: ReturnType<typeof buildVerificationStats>;
-  verificationDebt: VerificationDebtItem[];
-  scenarioStatuses: Array<{ scenario: ThreatScenario; status: ReturnType<typeof getScenarioStatus> }>;
   onOpenScope: () => void;
-  onOpenReportHub: () => void;
 }) {
   return (
-    <section className="grid two-col">
-      <div className="panel">
+    <section className="stack overview-page">
+      <section className="panel overview-intro">
+        <p className="eyebrow">Start an assessment</p>
+        <h2>Find the evidence gaps that would slow a serious investigation.</h2>
+        <p className="hero-copy">
+          Set the scope, verify the evidence you can actually rely on, then use the gaps and report pages to assign remediation. This is the workspace, not the final report.
+        </p>
+      </section>
+
+      <section className="panel">
         <div className="panel-title-row">
           <div>
-            <p className="eyebrow">Overview</p>
-            <h2>Assessment details and current evidence coverage</h2>
-          </div>
-          <div className="button-row overview-actions">
-            <button onClick={onOpenScope}>Open scope step</button>
-            <button className="primary-action" onClick={onOpenReportHub}>
-              Review report
-            </button>
+            <p className="eyebrow">Assessment details</p>
+            <h2>Name and scope the work</h2>
           </div>
         </div>
         <div className="form-grid">
@@ -715,62 +718,75 @@ function OverviewPanel({
           </label>
           <label className="span-two">
             Scope statement
-            <input value={metadata.scope} onChange={(event) => updateMetadata('scope', event.target.value)} />
+            <input value={metadata.scope} onChange={(event) => updateMetadata('scope', event.target.value)} placeholder="Business areas, systems, and investigation paths in scope" />
           </label>
           <label className="span-two">
             Notes
             <textarea value={metadata.notes} onChange={(event) => updateMetadata('notes', event.target.value)} rows={3} />
           </label>
         </div>
-        <div className="metric-grid">
-          <Metric label="Overall readiness" value={formatPercent(summary.overallScore)} />
-          <Metric label="Material risk gaps" value={summary.highRiskGapCount.toString()} />
+      </section>
+
+      <section className="overview-guide-grid" aria-label="Assessment workflow">
+        <article className="mini-panel">
+          <span className="workflow-number" aria-hidden="true">1</span>
+          <h3>Set boundaries</h3>
+          <p>Confirm the scope, ownership, and evidence-handling constraints.</p>
+        </article>
+        <article className="mini-panel">
+          <span className="workflow-number" aria-hidden="true">2</span>
+          <h3>Verify evidence</h3>
+          <p>Record only checks and provenance that have been independently confirmed.</p>
+        </article>
+        <article className="mini-panel">
+          <span className="workflow-number" aria-hidden="true">3</span>
+          <h3>Prioritise action</h3>
+          <p>Use gaps and reports to assign accountable remediation work.</p>
+        </article>
+      </section>
+
+      <section className="panel overview-status" aria-label="Current assessment status">
+        <div>
+          <p className="eyebrow">Current state</p>
+          <h2>Evidence has not been verified yet</h2>
+          <p className="tight-copy">Readiness is {formatPercent(summary.overallScore)} with {verificationStats.investigationReadySources} ready sources. Detailed findings stay on the Gaps and Report steps.</p>
+        </div>
+        <div className="metric-grid compact-metrics">
+          <Metric label="Readiness" value={formatPercent(summary.overallScore)} />
           <Metric label="Ready sources" value={verificationStats.investigationReadySources.toString()} />
-          <Metric label="Accepted risk" value={verificationStats.acceptedRiskSources.toString()} />
+          <Metric label="Open gaps" value={summary.highRiskGapCount.toString()} />
         </div>
-        <p className="summary-callout">{report.plainEnglishSummary}</p>
-        <div className="three-col dense-grid">
-          <SummaryList title="Strengths" items={report.strengths} />
-          <SummaryList title="Weaknesses" items={report.weaknesses} />
-          <SummaryList title="Recommended investments" items={report.recommendedInvestments} />
-        </div>
-      </div>
-      <div className="stack">
-        <section className="panel">
-          <p className="eyebrow">Top gaps</p>
-          <h2>Largest verified readiness gaps</h2>
-          <SummaryList title="" items={report.topGaps} />
-        </section>
-        <section className="panel">
-          <p className="eyebrow">Attack scenarios</p>
-          <h2>Current scenario coverage</h2>
-          <div className="compact-list">
-            {scenarioStatuses.slice(0, 5).map(({ scenario, status }) => (
-              <div className="list-card" key={scenario.id}>
-                <strong>{scenario.title}</strong>
-                <p>{status.label}</p>
-                <small>{formatPercent(status.readinessScore)} of required evidence ready</small>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="panel verification-debt">
-          <div className="panel-title-row compact">
-            <h2>Open verification debt</h2>
-            <span className="pill missing-pill">{verificationDebt.length} checks</span>
-          </div>
-          <div className="compact-list">
-            {verificationDebt.slice(0, 5).map((item) => (
-              <div className="list-card" key={`${item.sourceId}-${item.checkId}`}>
-                <strong>{item.sourceName}</strong>
-                <p>{item.checkLabel}</p>
-                <small>{item.verificationQuestion}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+      </section>
+
+      <WorkflowFooter
+        current="Overview"
+        nextLabel="Continue to scope"
+        nextHint="Confirm what the assessment covers before recording evidence."
+        onNext={onOpenScope}
+      />
     </section>
+  );
+}
+
+function WorkflowFooter({
+  current,
+  nextLabel,
+  nextHint,
+  onNext,
+}: {
+  current: string;
+  nextLabel: string;
+  nextHint: string;
+  onNext: () => void;
+}) {
+  return (
+    <footer className="workflow-footer" aria-label={`${current} workflow action`}>
+      <div>
+        <p className="eyebrow">Next step</p>
+        <strong>{nextHint}</strong>
+      </div>
+      <button className="primary-action" onClick={onNext}>{nextLabel}</button>
+    </footer>
   );
 }
 
@@ -788,7 +804,8 @@ function ScopePanel(props: {
   const prioritySources = summarySourceRows(props.verificationSummary, props.sourceById, props.remediationState);
 
   return (
-    <section className="grid two-col">
+    <section className="stack">
+      <div className="grid two-col">
       <section className="panel">
         <p className="eyebrow">Step 2</p>
         <h2>Confirm assessment scope and evidence-handling boundaries</h2>
@@ -844,14 +861,18 @@ function ScopePanel(props: {
           <li>Use this assessment to visualize readiness gaps, not to substitute for actual SIEM/EDR/DLP investigations.</li>
         </ul>
         <div className="button-row">
-          <button className="primary-action" onClick={props.onOpenVerify}>
-            Open source readiness step
-          </button>
           <span className={`pill ${props.assessmentMode === 'real' ? 'warning-pill' : 'info-pill'}`}>
             {props.assessmentMode === 'real' ? 'Evidence starts blank' : 'Guide data loaded'}
           </span>
         </div>
       </section>
+      </div>
+      <WorkflowFooter
+        current="Scope"
+        nextLabel="Continue to source readiness"
+        nextHint="Record and validate the evidence sources that support this scope."
+        onNext={props.onOpenVerify}
+      />
     </section>
   );
 }
@@ -914,11 +935,6 @@ function VerificationWorkspace({
             </p>
           </div>
           <div className="button-row">
-            {onOpenNext && (
-              <button className="primary-action" onClick={onOpenNext}>
-                Open threat modelling scenarios step
-              </button>
-            )}
             {assessmentMode === 'demo' && <button onClick={() => onPreset('all')}>Verify all demo checks</button>}
             {assessmentMode === 'real' && <button onClick={() => onPreset('clear')}>Clear evidence</button>}
           </div>
@@ -1119,6 +1135,14 @@ function VerificationWorkspace({
           ))}
         </div>
       </section>
+      {onOpenNext && (
+        <WorkflowFooter
+          current="Source readiness"
+          nextLabel="Continue to threat modelling"
+          nextHint="Review coverage against the scenario library after the evidence checks are recorded."
+          onNext={onOpenNext}
+        />
+      )}
     </section>
   );
 }
@@ -1151,11 +1175,6 @@ function ThreatScenariosPanel({
               <h2>Evidence readiness for priority investigations</h2>
               <p className="tight-copy">These measures use the evidence verified in this assessment.</p>
             </div>
-            {onOpenGaps && (
-              <button className="primary-action" onClick={onOpenGaps}>
-                Open gaps step
-              </button>
-            )}
           </div>
           <div className="metric-grid compact-metrics">
             <Metric label="Ready sources" value={verificationStats.investigationReadySources.toString()} />
@@ -1187,6 +1206,14 @@ function ThreatScenariosPanel({
             <ScenarioCard key={scenario.id} scenario={scenario} verificationSummary={verificationSummary} sourceById={sourceById} />
           ))}
         </div>
+      )}
+      {onOpenGaps && (
+        <WorkflowFooter
+          current="Threat modelling"
+          nextLabel="Continue to gaps"
+          nextHint="Turn the uncovered scenario paths into accountable remediation work."
+          onNext={onOpenGaps}
+        />
       )}
     </section>
   );
@@ -1415,9 +1442,6 @@ function GapAnalysisPanel({
             <h2>Prioritised investigation gaps and evidence improvements</h2>
             <p className="tight-copy">Risk gaps are investigation paths below 80% verified evidence readiness. Source actions show which evidence improvements close the most risk.</p>
           </div>
-          <button className="primary-action" onClick={onOpenReportHub}>
-            Review report
-          </button>
         </div>
         <div className="metric-grid compact-metrics">
           <Metric label="Material risk gaps" value={summary.highRiskGapCount.toString()} />
@@ -1535,6 +1559,12 @@ function GapAnalysisPanel({
           );
         })}
       </div>
+      <WorkflowFooter
+        current="Gaps"
+        nextLabel="Continue to report"
+        nextHint="Review ownership, accepted risk, and the executive output before sharing it."
+        onNext={onOpenReportHub}
+      />
     </section>
   );
 }

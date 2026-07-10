@@ -45,9 +45,12 @@ describe('App integrated assessment experience', () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
 
-    expect(screen.getByRole('heading', { name: /^Gaps Analysis Tool by S6$/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Define the scope, verify the evidence, then review the gaps/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Assessment details and current evidence coverage/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Gaps Analysis Tool$/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Find the evidence gaps that would slow a serious investigation/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Name and scope the work/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Demo' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Continue to scope' })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^Overview/i })).toHaveAttribute('aria-current', 'step');
     expect(within(workflowNav).getByRole('button', { name: /Scope/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /Source Readiness/i })).toBeInTheDocument();
@@ -91,14 +94,33 @@ describe('App integrated assessment experience', () => {
     expect(screen.queryByRole('button', { name: 'Verify all demo checks' })).not.toBeInTheDocument();
 
     await enterDemoMode();
-    expect(screen.getByRole('button', { name: /Exit demo/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Demo' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText(/Demo data is loaded/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Verify all demo checks' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Clear evidence' })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Exit demo/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Live' }));
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Overview/i }));
     expect(screen.getByRole('textbox', { name: /Assessment name/i })).toHaveValue('Real assessment in progress');
+  });
+
+  it('keeps workflow progression actions at the end of each working page', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to scope' }));
+    expect(screen.getByRole('contentinfo', { name: 'Scope workflow action' })).toHaveTextContent('Continue to source readiness');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to source readiness' }));
+    expect(screen.getByRole('contentinfo', { name: 'Source readiness workflow action' })).toHaveTextContent('Continue to threat modelling');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to threat modelling' }));
+    expect(screen.getByRole('contentinfo', { name: 'Threat modelling workflow action' })).toHaveTextContent('Continue to gaps');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to gaps' }));
+    expect(screen.getByRole('contentinfo', { name: 'Gaps workflow action' })).toHaveTextContent('Continue to report');
+    expect(within(workflowNav).getByRole('button', { name: /^Gaps/i })).toHaveAttribute('aria-current', 'step');
   });
 
   it('supports the ordered workflow spine and local snapshot saving', async () => {
