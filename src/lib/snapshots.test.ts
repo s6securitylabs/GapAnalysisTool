@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { createSnapshot, parseSnapshot, saveSnapshot, serializeSnapshot, buildSnapshotComparison } from './snapshots';
+import { catalogue } from '../data/catalogue';
+import {
+  createSnapshot,
+  parseSnapshot,
+  saveSnapshot,
+  serializeSnapshot,
+  buildSnapshotComparison,
+  migrateSnapshot,
+} from './snapshots';
 
 describe('snapshot helpers', () => {
   it('serializes and parses a snapshot', () => {
@@ -36,6 +44,37 @@ describe('snapshot helpers', () => {
     }));
 
     expect(parsed.remediationState['siem-enrichment'].validationMethod).toContain('source canaries');
+    expect(parsed.catalogueVersion).toBe(catalogue.version);
+  });
+
+  it('migrates v0.3 workforce check IDs without dropping verified evidence', () => {
+    const migrated = migrateSnapshot({
+      id: 'legacy-workforce',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      catalogueVersion: 'seed-0.3.0',
+      mode: 'real',
+      metadata: { name: 'Workforce', owner: 'Ops', notes: '', scope: 'Review' },
+      sourceState: {
+        'hr-case': {
+          maturity: 'investigation-ready',
+          verifiedCheckIds: ['hr-status-dates', 'hr-role-context', 'legacy-unknown-check'],
+          evidenceReference: 'Case file 12',
+          validatedBy: 'Investigator',
+          validatedAt: '2026-01-01',
+        },
+      } as never,
+      remediationState: {} as never,
+    });
+
+    expect(migrated.sourceState['hr-case'].verifiedCheckIds).toEqual(
+      expect.arrayContaining(['hr-lifecycle-dates', 'hr-role-context']),
+    );
+    expect(migrated.sourceState['hr-case'].verifiedCheckIds).not.toContain('hr-status-dates');
+    expect(migrated.sourceState['hr-case'].verifiedCheckIds).not.toContain('legacy-unknown-check');
+    expect(migrated.migrationNotes?.join(' ')).toMatch(/hr-status-dates → hr-lifecycle-dates/);
+    expect(migrated.migrationNotes?.join(' ')).toMatch(/legacy-unknown-check/);
+    expect(migrated.migrationNotes?.join(' ')).toMatch(/still need verification/);
+    expect(migrated.catalogueVersion).toBe(catalogue.version);
   });
 
   it('stores the latest snapshot in local storage order', () => {

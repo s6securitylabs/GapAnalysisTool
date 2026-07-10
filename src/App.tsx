@@ -134,6 +134,7 @@ function App() {
   const [glossaryQuery, setGlossaryQuery] = useState('');
   const [snapshots, setSnapshots] = useState<AssessmentSnapshot[]>(() => loadSnapshots(window.localStorage));
   const [selectedSnapshotId, setSelectedSnapshotId] = useState('');
+  const [snapshotMigrationNotes, setSnapshotMigrationNotes] = useState<string[]>([]);
   const [showPrintableReport, setShowPrintableReport] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const preGuideState = useRef<{
@@ -425,6 +426,7 @@ function App() {
       setMetadata(imported.metadata);
       setSourceState(imported.sourceState);
       setRemediationState(normalizeRemediationState(imported.remediationState));
+      setSnapshotMigrationNotes(imported.migrationNotes ?? []);
       preGuideState.current = null;
       const next = saveSnapshot(window.localStorage, imported);
       setSnapshots(next);
@@ -469,6 +471,15 @@ function App() {
         <aside className="guide-notice" aria-label="Demo mode">
           <strong>Demo data is loaded.</strong>
           <span>Use it to explore the workflow. Exit demo to restore your real assessment exactly as you left it.</span>
+        </aside>
+      )}
+      {snapshotMigrationNotes.length > 0 && (
+        <aside className="guide-notice snapshot-migration-notice" aria-label="Snapshot migration">
+          <strong>Snapshot upgraded to the current catalogue.</strong>
+          <ul>
+            {snapshotMigrationNotes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+          <button type="button" onClick={() => setSnapshotMigrationNotes([])}>Dismiss</button>
         </aside>
       )}
       {showDemoDialog && (

@@ -257,6 +257,20 @@ small {
   color: var(--accent-strong);
 }
 
+.snapshot-migration-notice {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.snapshot-migration-notice ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.snapshot-migration-notice button {
+  margin-top: 4px;
+}
+
 .eyebrow-row {
   display: flex;
   gap: 8px;
