@@ -53,7 +53,7 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
     const query = libraryQuery.trim().toLowerCase();
     return threatModel.scenarios.filter((item) => {
       const matchesKind = libraryKind === 'all' || item.kind === libraryKind;
-      const haystack = `${item.title} ${item.actor} ${item.objective} ${item.summary} ${item.themes.join(' ')} ${scenarioTechniques(item).join(' ')}`.toLowerCase();
+      const haystack = `${item.title} ${item.actor} ${item.objective} ${item.summary} ${item.story.title} ${item.story.narrative} ${item.story.businessImpact} ${item.story.considerations.join(' ')} ${item.story.outcome} ${item.themes.join(' ')} ${scenarioTechniques(item).join(' ')}`.toLowerCase();
       return matchesKind && (query === '' || haystack.includes(query));
     });
   }, [libraryKind, libraryQuery]);
@@ -165,6 +165,33 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
           </span>
         </div>
       </div>
+
+      <article className="scenario-story" aria-labelledby={`scenario-story-${scenario.id}`}>
+        <div className="scenario-story-heading">
+          <div>
+            <p className="eyebrow">Fictional scenario story</p>
+            <h3 id={`scenario-story-${scenario.id}`}>{scenario.story.title}</h3>
+          </div>
+          <span className="pill info-pill">Context, impact, outcome</span>
+        </div>
+        <p className="scenario-story-narrative">{scenario.story.narrative}</p>
+        <div className="scenario-story-grid">
+          <section>
+            <strong>Damage to the business</strong>
+            <p>{scenario.story.businessImpact}</p>
+          </section>
+          <section>
+            <strong>Outcome</strong>
+            <p>{scenario.story.outcome}</p>
+          </section>
+        </div>
+        <div className="scenario-story-considerations">
+          <strong>Factors to consider</strong>
+          <ul>
+            {scenario.story.considerations.map((consideration) => <li key={consideration}>{consideration}</li>)}
+          </ul>
+        </div>
+      </article>
 
       {/* Keying the scene on the scenario resets clock, camera, and buffers on every switch. */}
       {mode === '2d' ? <AttackChainMap scenario={scenario} sourceById={sourceById} /> : <ThreatSimulation key={scenario.id} scenario={scenario} />}

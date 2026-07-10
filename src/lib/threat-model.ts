@@ -358,6 +358,8 @@ export function serializeScenario(scenario: ThreatScenario): string {
         title: scenario.title,
         actor: scenario.actor,
         objective: scenario.objective,
+        summary: scenario.summary,
+        story: scenario.story,
       },
       coverage: {
         coveredStages: outcome.coveredStages,

@@ -1663,6 +1663,62 @@ small {
   margin: 0;
 }
 
+.scenario-story {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--panel) 0%, var(--panel-muted) 100%);
+}
+
+.scenario-story-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scenario-story-heading h3,
+.scenario-story-heading p,
+.scenario-story p {
+  margin: 0;
+}
+
+.scenario-story-narrative {
+  max-width: 92ch;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.scenario-story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scenario-story-grid section {
+  padding: 13px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel-muted);
+}
+
+.scenario-story-grid p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.scenario-story-considerations ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 22px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+}
+
 /* --- 2D Attack Chain Map --------------------------------------------------- */
 
 .attack-chain-map {
@@ -2672,6 +2728,15 @@ small {
 }
 
 @media (max-width: 520px) {
+  .scenario-story-grid,
+  .scenario-story-considerations ul {
+    grid-template-columns: 1fr;
+  }
+
+  .scenario-story-heading {
+    flex-direction: column;
+  }
+
   .library-filters,
   .scenario-library-grid {
     grid-template-columns: 1fr;

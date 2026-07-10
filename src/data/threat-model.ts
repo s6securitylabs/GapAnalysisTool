@@ -117,6 +117,19 @@ export interface ScenarioStage {
   actorPresent?: boolean;
 }
 
+export interface ScenarioStory {
+  /** Short fictional case name. All people, organisations, and events are invented. */
+  title: string;
+  /** The scenario as a concise business narrative rather than a control checklist. */
+  narrative: string;
+  /** Credible operational, financial, regulatory, customer, or strategic harm. */
+  businessImpact: string;
+  /** Facts and alternative explanations that should shape analysis and response. */
+  considerations: string[];
+  /** The modelled end state, including what changed after the incident. */
+  outcome: string;
+}
+
 export interface ThreatScenario {
   id: string;
   kind: ScenarioKind;
@@ -124,6 +137,7 @@ export interface ThreatScenario {
   actor: string;
   objective: string;
   summary: string;
+  story: ScenarioStory;
   themes: ThreatScenarioTheme[];
   stages: ScenarioStage[];
 }
@@ -188,6 +202,141 @@ export const attackChainStages: AttackChainStage[] = [
   },
 ];
 
+const scenarioStories = {
+  'internal-pre-resignation-exfiltration': {
+    title: 'The customer list that left on Friday',
+    narrative: 'Mara, a fictional account manager, gives notice and continues serving customers from her managed laptop. Over several evenings she widens familiar CRM reports, exports pricing and contact records, compresses them, and uploads one archive to a personal cloud drive.',
+    businessImpact: 'A competitor approaches key accounts with current pricing. Sales must notify customers, legal assesses confidentiality and privacy duties, and leadership loses confidence in controls during workforce transitions.',
+    considerations: [
+      'Resignation is context for a control review, not proof of intent.',
+      'Approved exports, handovers, and shared-device activity must be ruled out.',
+      'HR context must remain purpose-limited and restricted to authorised reviewers.',
+    ],
+    outcome: 'The archive is discovered after a customer complaint. Investigators reconstruct the chain, but containment arrives too late; transition reviews, correlated export alerts, and named response ownership follow.',
+  },
+  'internal-privileged-sabotage': {
+    title: 'The change freeze that did not freeze privilege',
+    narrative: 'During a fictional holiday change freeze, an infrastructure engineer uses retained administrator rights from an old assignment. A break-glass path allows access without prior approval, and destructive commands remove production configuration before the on-call team intervenes.',
+    businessImpact: 'A customer service is unavailable for hours, service credits are triggered, engineers abandon planned work to restore systems, and auditors question why standing privilege survived the role change.',
+    considerations: [
+      'Emergency work may be legitimate, so tickets and attribution matter.',
+      'A recorded session supports investigation but does not prevent damage.',
+      'Recovery dependencies and privileged-access expiry must be tested together.',
+    ],
+    outcome: 'The recording proves what happened and supports recovery, but only after impact. Standing access is replaced with time-bound elevation and destructive operations receive stronger approval and rollback controls.',
+  },
+  'cyber-phishing-to-ransomware': {
+    title: 'One session, three warehouses offline',
+    narrative: 'A fictional logistics coordinator approves a convincing MFA prompt after opening a supplier-themed message. An access broker sells the session to a ransomware affiliate, which moves through an unmanaged endpoint, finds recovery infrastructure, and encrypts scheduling systems.',
+    businessImpact: 'Dispatch stops across three warehouses, deliveries miss contractual windows, manual processing costs surge, and customers wait while the company establishes whether data was also taken.',
+    considerations: [
+      'The user may be deceived rather than culpable.',
+      'Session theft can survive a password reset unless tokens are revoked.',
+      'Unmanaged-device evidence and backup isolation determine disruption length.',
+    ],
+    outcome: 'Identity controls limit some movement but endpoint blind spots delay containment. The business restores clean backups, rotates sessions and credentials, and adopts phishing-resistant authentication and stronger device policy.',
+  },
+  'cyber-saas-token-theft': {
+    title: 'The productivity add-in that read the board papers',
+    narrative: 'A fictional finance analyst installs a polished meeting assistant and grants delegated mail and file access. The application quietly reads executive mailboxes and board folders for weeks from provider infrastructure, using the sanctioned API rather than the corporate network.',
+    businessImpact: 'Confidential acquisition plans and forecasts leave the tenant. The deal timetable changes, advisers begin regulatory reviews, and the organisation cannot determine the earliest affected records because retention is too short.',
+    considerations: [
+      'No password or MFA bypass is required when consent grants access.',
+      'Application activity must be distinguished from human activity.',
+      'Provider audit data may be the only primary evidence of API exfiltration.',
+    ],
+    outcome: 'The provider removes the application and alerts customers. Grants are revoked, but exposure remains partly unquantified; consent is restricted and application identities receive separate monitoring.',
+  },
+  'third-party-cloud-export': {
+    title: 'The contractor account that outlived the contract',
+    narrative: 'A fictional implementation partner finishes an engagement on Tuesday, yet its federated account and project workspace remain active. On Friday the former contractor signs in, runs a native export, and shares the archive externally before removing visible membership.',
+    businessImpact: 'Design documents and customer configuration leave the workspace. The company must involve the supplier, examine notification duties, reassure the customer, and explain why sponsorship and access expiry were disconnected.',
+    considerations: [
+      'Project closeout exports may be authorised and need sponsor confirmation.',
+      'Federated identity, sessions, links, and tokens require coordinated revocation.',
+      'Contract dates should trigger control checks, not person-level risk scoring.',
+    ],
+    outcome: 'Security finds the export but cannot prove its destination from complete records. Sponsor-owned expiry, external-share controls, and a single containment playbook are introduced.',
+  },
+  'break-glass-credential-misuse': {
+    title: 'The emergency account with no emergency',
+    narrative: 'A fictional operator checks out a shared emergency administrator credential using a vague justification. The session changes production access policy, inventories recovery secrets, and shortens audit retention even though no incident or approved change exists.',
+    businessImpact: 'Recovery assurance is weakened and the organisation cannot initially attribute the session. Production changes must be reversed, secrets rotated, and service is degraded while trust in emergency access is rebuilt.',
+    considerations: [
+      'Break-glass access must remain usable during genuine outages.',
+      'The human operator must be attributable behind a shared identity.',
+      'Missing approval is a control failure; motive requires separate evidence.',
+    ],
+    outcome: 'The changes are restored before a major outage, but shortened retention leaves an evidence gap. Stronger approval, individual attribution, automatic rotation, and independent retention alerts follow.',
+  },
+  'detection-pipeline-suppression': {
+    title: 'The quiet hour before destruction',
+    narrative: 'A fictional attacker recovers a stale automation secret from an old deployment. The workload identity redirects alerts and disables one cloud audit sink, creating a quiet hour to enumerate recovery systems and prepare destructive changes.',
+    businessImpact: 'Responders lose confidence in visibility and must assume missed activity across critical services. Recovery slows, forensic costs rise, and executives cannot give customers a reliable impact timeline.',
+    considerations: [
+      'Telemetry health must be monitored independently of the pipeline it protects.',
+      'Automation identities need ownership, expiry, and client context.',
+      'A drop in events may indicate an outage or error rather than attack.',
+    ],
+    outcome: 'An independent health check exposes the drop. The identity is revoked and logging restored; immutable destinations, freshness alerts, and exercises for reconstructing blind periods follow.',
+  },
+  'negligent-external-sharing': {
+    title: 'The wrong Alex received the forecast',
+    narrative: 'A fictional project lead intends to send a forecast to an approved adviser but autocomplete selects a similarly named external contact. The recipient opens the attachment before the sender recognises the mistake and reports it.',
+    businessImpact: 'Commercially sensitive forecasts are disclosed outside the agreed relationship. Legal and privacy teams assess exposure, the project pauses, and management spends time confirming deletion.',
+    considerations: [
+      'Prompt self-reporting is exculpatory and should accelerate containment.',
+      'Delivery, open, recall, and revocation evidence differ by platform.',
+      'The response should distinguish human error from malicious transfer.',
+    ],
+    outcome: 'The recipient confirms deletion and access is revoked, limiting harm. External-recipient friction and classification improve while the organisation preserves a no-blame reporting path.',
+  },
+  'removable-media-data-theft': {
+    title: 'The prototype files on a pocket drive',
+    narrative: 'A fictional engineer connects an unapproved USB drive and gathers prototype drawings from folders beyond the current assignment. The files are staged, copied to the device, and the local staging folder is deleted before the drive leaves the building.',
+    businessImpact: 'Product intellectual property may reach a competitor before launch. Engineering freezes collaboration, legal evaluates options, and leadership faces lost first-mover advantage without a complete copied-file list.',
+    considerations: [
+      'Approved offline work and device exceptions must be checked.',
+      'File classification and object-level copy evidence determine impact.',
+      'Physical possession alone does not prove which data was transferred.',
+    ],
+    outcome: 'Endpoint logs identify the device but incomplete copy telemetry prevents exact scoping. Removable-media blocking and exception controls are strengthened, with evidence preservation added to response.',
+  },
+  'business-record-fraud': {
+    title: 'The supplier account that changed overnight',
+    narrative: 'A fictional accounts employee learns that low-value supplier changes receive little review. The employee alters payment details, approves invoices below thresholds, and edits notes after payment to make the transactions appear routine.',
+    businessImpact: 'Funds are diverted, supplier payments are delayed, finance must reconstruct records, and auditors challenge segregation of duties and the integrity of the approval trail.',
+    considerations: [
+      'Legitimate corrections and delegated approvals need to remain possible.',
+      'Immutable before-and-after values are stronger than retrospective narrative.',
+      'Finance, fraud, HR, legal, and security need one governed case owner.',
+    ],
+    outcome: 'Bank reconciliation exposes the loss after several payments. Some funds are recovered, but incomplete history prolongs investigation; dual approval and immutable audit controls are introduced.',
+  },
+  'insider-collusion': {
+    title: 'Two ordinary actions, one coordinated theft',
+    narrative: 'Two fictional employees exploit a split workflow: one grants temporary access with a plausible project reason, while the other exports small batches below individual thresholds. The first then removes the grant, making each account look tidy in isolation.',
+    businessImpact: 'A sensitive customer dataset is disclosed and the organisation initially investigates the wrong account. Notification is delayed, customer confidence falls, and segregation-of-duties assumptions fail.',
+    considerations: [
+      'Shared objects, timing, approvals, and destinations are stronger than association alone.',
+      'Normal collaboration can resemble coordination and needs an alternative explanation.',
+      'Serious escalation should require independent corroboration.',
+    ],
+    outcome: 'A cross-entity timeline links the grant, export, and share. Expiring access, object-centred correlation, and multidisciplinary review are added before any adverse action.',
+  },
+  'personal-email-forwarding': {
+    title: 'The forwarding rule that kept sending',
+    narrative: 'A fictional employee creates a narrow mailbox rule that forwards selected project messages to a personal account for convenience. Sensitive attachments continue leaving automatically, including after the employee forgets the rule exists.',
+    businessImpact: 'Customer and contract material accumulates outside managed retention and access controls. The organisation must scope months of delivery, contact affected parties, and address contractual handling failures.',
+    considerations: [
+      'Intent may range from convenience to theft and should not be assumed.',
+      'Forwarding rules, delegated access, and direct sends are separate paths.',
+      'Message trace, attachment metadata, and DLP disposition define exposure.',
+    ],
+    outcome: 'A periodic review discovers the flow. The rule and sessions are revoked, delivery is scoped, and external forwarding is blocked except through approved, expiring exceptions.',
+  },
+} satisfies Record<string, ScenarioStory>;
+
 const internalPreResignationExfiltration: ThreatScenario = {
   id: 'internal-pre-resignation-exfiltration',
   kind: 'internal',
@@ -196,6 +345,7 @@ const internalPreResignationExfiltration: ThreatScenario = {
   objective: 'Take customer records and pricing material out of the estate before the last working day.',
   summary:
     'The workforce event is known to HR before it is known to security. Access stays legitimate throughout, so every stage turns on whether the evidence separates ordinary work from collection and transfer.',
+  story: scenarioStories['internal-pre-resignation-exfiltration'],
   themes: ['insider-misuse', 'data-exfiltration'],
   stages: [
     {
@@ -387,6 +537,7 @@ const internalPrivilegedSabotage: ThreatScenario = {
   objective: 'Delete production configuration and disrupt a service during a period when change is supposed to be frozen.',
   summary:
     'Privilege is real and approved. The question is not whether the actor could act, but whether the estate can tie each privileged action to an approval and stop it before impact lands.',
+  story: scenarioStories['internal-privileged-sabotage'],
   themes: ['insider-misuse', 'privileged-admin', 'sabotage', 'detection-response'],
   stages: [
     {
@@ -540,6 +691,7 @@ const cyberPhishingToRansomware: ThreatScenario = {
   objective: 'Convert one stolen session into estate-wide encryption, after first destroying the backups.',
   summary:
     'An external chain that reaches deep because the identity layer is strong and the endpoint layer is not. Two stages hold; the middle of the chain is an unlit zone.',
+  story: scenarioStories['cyber-phishing-to-ransomware'],
   themes: ['credential-misuse', 'ransomware', 'detection-response'],
   stages: [
     {
@@ -735,6 +887,7 @@ const cyberSaasTokenTheft: ThreatScenario = {
   objective: 'Hold long-lived delegated access to mail and files without ever handling a password.',
   summary:
     'Nothing is compromised in the usual sense. A user grants consent, and the resulting token outlives every password reset the estate can perform.',
+  story: scenarioStories['cyber-saas-token-theft'],
   themes: ['credential-misuse', 'cloud-saas', 'data-exfiltration', 'detection-response'],
   stages: [
     {
@@ -1009,6 +1162,7 @@ const thirdPartyCloudExport = createCuratedScenario({
   actor: 'Third-party specialist whose federated account and project workspace remain active after the engagement ends.',
   objective: 'Export project data through an approved SaaS interface after the contractual access window closes.',
   summary: 'This scenario tests third-party lifecycle ownership, federated identity correlation, SaaS export fidelity, external sharing, and timely containment.',
+  story: scenarioStories['third-party-cloud-export'],
   themes: ['third-party', 'credential-misuse', 'cloud-saas', 'data-exfiltration', 'detection-response'],
   stages: {
     preparation: { action: 'Engagement ends without an access trigger', detail: 'The supplier record closes, but no identity workflow receives the effective end date.', sourceId: 'hr-case', signal: 'Third-party end date and sponsor', evidenceStatus: 'absent', gapType: 'telemetry' },
@@ -1028,6 +1182,7 @@ const breakGlassCredentialMisuse = createCuratedScenario({
   actor: 'Operator using a shared emergency credential without a corresponding incident or approved change.',
   objective: 'Change production access controls and weaken recovery safeguards outside change control.',
   summary: 'This scenario separates emergency access from approved work and tests vault attribution, command evidence, change correlation, sabotage detection, and recovery ownership.',
+  story: scenarioStories['break-glass-credential-misuse'],
   themes: ['insider-misuse', 'privileged-admin', 'credential-misuse', 'sabotage', 'detection-response'],
   stages: {
     preparation: { action: 'Emergency credential is checked out without a ticket', detail: 'The vault permits access using a generic justification.', sourceId: 'privileged-admin', signal: 'Vault checkout, approver, and ticket reference', evidenceStatus: 'partial', gapType: 'detection' },
@@ -1047,6 +1202,7 @@ const detectionPipelineSuppression = createCuratedScenario({
   actor: 'External actor using a compromised automation identity with permission to change cloud logging and alert routing.',
   objective: 'Create a quiet window for destructive changes by suppressing audit delivery and response notifications.',
   summary: 'This scenario focuses on SOC engineering controls: service-identity use, logging health, analytic dependencies, alert routing, independent evidence, and restoration testing.',
+  story: scenarioStories['detection-pipeline-suppression'],
   themes: ['credential-misuse', 'cloud-saas', 'sabotage', 'ransomware', 'detection-response'],
   stages: {
     preparation: { action: 'Automation credential is recovered from a stale deployment', detail: 'A long-lived secret remains usable after the deployment is retired.', technique: 'T1552.001 Unsecured Credentials: Credentials In Files', sourceId: 'cloud-storage', signal: 'Service credential age and last use', evidenceStatus: 'partial', gapType: 'detection' },
@@ -1066,6 +1222,7 @@ const negligentExternalSharing = createCuratedScenario({
   actor: 'Employee sharing a sensitive document with the wrong external recipient while completing normal work.',
   objective: 'Confirm what was exposed, who received it, and whether access was revoked without treating a mistake as malicious intent.',
   summary: 'A non-malicious insider scenario for testing sharing audit, data classification, DLP disposition, privacy-aware triage, and fast revocation.',
+  story: scenarioStories['negligent-external-sharing'],
   themes: ['insider-misuse', 'data-exfiltration', 'cloud-saas', 'detection-response'],
   stages: {
     preparation: { action: 'Sensitive file is prepared for a legitimate task', detail: 'A project document is ready to share with an approved partner.', sourceId: 'file-access', signal: 'File owner, classification, and approved audience', evidenceStatus: 'partial', gapType: 'telemetry' },
@@ -1085,6 +1242,7 @@ const removableMediaTheft = createCuratedScenario({
   actor: 'Employee with legitimate access copying sensitive files to removable media outside their duties.',
   objective: 'Tie sensitive file access and USB copy activity to a person, device, and business context.',
   summary: 'Tests endpoint device control, object-level file audit, classification, copy-volume detection, and evidence preservation for removable-media exfiltration.',
+  story: scenarioStories['removable-media-data-theft'],
   themes: ['insider-misuse', 'data-exfiltration', 'detection-response'],
   stages: {
     preparation: { action: 'Personal USB device is connected', detail: 'An unapproved removable device is attached to a managed endpoint.', technique: 'T1052.001 Exfiltration Over Physical Medium: Exfiltration over USB', sourceId: 'endpoint-edr', signal: 'USB device identity and connection event', evidenceStatus: 'present' },
@@ -1104,6 +1262,7 @@ const businessRecordFraud = createCuratedScenario({
   actor: 'Employee altering customer, payment, payroll, or expense records for personal gain.',
   objective: 'Prove which records changed, who approved them, and whether segregation-of-duties controls worked.',
   summary: 'An insider-fraud scenario covering valid access, approval bypass, stored-data manipulation, audit integrity, and financial-impact scoping.',
+  story: scenarioStories['business-record-fraud'],
   themes: ['insider-misuse', 'privileged-admin', 'sabotage', 'detection-response'],
   stages: {
     preparation: { action: 'Approval weakness is identified', detail: 'The actor learns that low-value changes receive little secondary review.', sourceId: 'saas-audit', signal: 'Approval workflow and role configuration', evidenceStatus: 'partial', gapType: 'detection' },
@@ -1123,6 +1282,7 @@ const insiderCollusion = createCuratedScenario({
   actor: 'Two employees in different roles coordinating access, approval, collection, and transfer.',
   objective: 'Reconstruct a multi-user timeline without assuming that each action is suspicious in isolation.',
   summary: 'Tests identity correlation, segregation of duties, shared-object history, approval evidence, and cross-user detection across normal-looking activity.',
+  story: scenarioStories['insider-collusion'],
   themes: ['insider-misuse', 'privileged-admin', 'data-exfiltration', 'detection-response'],
   stages: {
     preparation: { action: 'Users agree roles and timing', detail: 'One user can grant access; the other can export data.', sourceId: 'hr-case', signal: 'Role, reporting line, and approved case context', evidenceStatus: 'partial', gapType: 'telemetry' },
@@ -1142,6 +1302,7 @@ const personalEmailForwarding = createCuratedScenario({
   actor: 'Employee creating a forwarding rule or repeatedly sending sensitive attachments to personal email.',
   objective: 'Detect and scope mail leaving through forwarding rules, attachments, or delegated mailbox access.',
   summary: 'Tests mailbox audit, forwarding-rule detection, attachment metadata, DLP coverage, delegated access, and revocation of persistent mail flows.',
+  story: scenarioStories['personal-email-forwarding'],
   themes: ['insider-misuse', 'data-exfiltration', 'cloud-saas', 'detection-response'],
   stages: {
     preparation: { action: 'Personal mailbox destination is tested', detail: 'A low-sensitivity message is sent externally before larger transfers begin.', technique: 'T1048 Exfiltration Over Alternative Protocol', sourceId: 'email', signal: 'External recipient and message trace', evidenceStatus: 'present' },
@@ -1154,8 +1315,158 @@ const personalEmailForwarding = createCuratedScenario({
   },
 });
 
+const businessEmailCompromise = createCuratedScenario({
+  id: 'business-email-compromise',
+  kind: 'cyber',
+  title: 'Business email compromise and payment diversion',
+  actor: 'External fraud group using a stolen finance mailbox session and a lookalike supplier domain.',
+  objective: 'Redirect a genuine supplier payment while making the request appear to come from trusted participants.',
+  summary: 'Tests phishing-resistant authentication, session revocation, mailbox-rule visibility, supplier-change verification, payment approval, and recovery coordination.',
+  story: {
+    title: 'The invoice that changed banks',
+    narrative: 'A fictional accounts payable analyst signs into a convincing document portal, giving an attacker a live mailbox session. The attacker studies an existing supplier thread, creates a narrow hiding rule, and sends revised bank details just before a genuine high-value invoice is due. The wording, timing, and signatures all match normal business.',
+    businessImpact: 'A major payment reaches a criminal account. The real supplier pauses delivery, treasury begins an urgent recall, insurers and banks demand evidence, and executives must explain why an authenticated email bypassed the payment-change process.',
+    considerations: [
+      'An authenticated message proves mailbox use, not that the named employee authored it.',
+      'Independent supplier verification and dual approval would prevent the payment even after mailbox compromise.',
+      'Mailbox, identity, payment, and telephone-verification timelines must be preserved together.',
+    ],
+    outcome: 'The bank freezes part of the transfer, but the remainder is lost. The organisation revokes all sessions, removes persistence, resets supplier details, and requires out-of-band verification for every payment-instruction change.',
+  },
+  themes: ['credential-misuse', 'cloud-saas', 'detection-response'],
+  stages: {
+    preparation: { action: 'Supplier relationship and invoice timing are studied', detail: 'The actor uses public information and earlier mailbox access to understand names, language, and payment timing.', technique: 'T1589 Gather Victim Identity Information', sourceId: 'email', signal: 'Mailbox search and thread access before the payment request', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Finance mailbox session is stolen', detail: 'A reverse-proxy phishing page captures a live authenticated session rather than only a password.', technique: 'T1539 Steal Web Session Cookie', sourceId: 'idp-auth', signal: 'Session issuance, token use, device, and source network', evidenceStatus: 'partial', gapType: 'telemetry' },
+    misuse: { action: 'Hiding rule and deceptive reply are created', detail: 'Supplier replies are diverted while the actor continues a real invoice conversation.', technique: 'T1114.003 Email Collection: Email Forwarding Rule', sourceId: 'email', signal: 'Inbox rule, send action, thread, and client context', evidenceStatus: 'present' },
+    collection: { action: 'Payment details and approval language are copied', detail: 'The actor extracts bank details, signatures, and internal approval phrasing from historic mail.', technique: 'T1114 Email Collection', sourceId: 'email', signal: 'Searches, message access, attachments, and mailbox session', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'Funds are diverted through a changed supplier record', detail: 'The compromise becomes business impact when new bank details pass the payment workflow.', technique: 'T1657 Financial Theft', sourceId: 'saas-audit', signal: 'Supplier-bank change, approver, verification, and payment release', evidenceStatus: 'partial', gapType: 'detection' },
+    concealment: { action: 'Replies and alerts are hidden from the mailbox owner', detail: 'Rules move supplier responses and security messages away from the inbox.', technique: 'T1070.008 Clear Mailbox Data', sourceId: 'email', signal: 'Rule action, deleted or moved messages, and audit history', evidenceStatus: 'present' },
+    response: { action: 'Sessions are revoked and treasury recalls payment', detail: 'Containment spans identity, email persistence, supplier master data, banks, insurers, and law enforcement.', sourceId: 'siem-enrichment', signal: 'Named incident owner, session revocation, recall, and recovery evidence', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const publicApiDataBreach = createCuratedScenario({
+  id: 'public-api-data-breach',
+  kind: 'cyber',
+  title: 'Public API exploitation and customer data breach',
+  actor: 'External attacker exploiting a broken object-authorisation flaw in an internet-facing customer API.',
+  objective: 'Enumerate customer records through valid API requests and extract regulated data without compromising an account.',
+  summary: 'Tests API inventory, object-level authorisation, request attribution, rate limits, data classification, abuse detection, and breach scoping.',
+  story: {
+    title: 'The customer number that opened every account',
+    narrative: 'A fictional customer notices that changing one numeric identifier in a mobile-app request returns another customer’s profile. A criminal group automates the request across thousands of identifiers, slowly enough to resemble normal use, and stores the responses outside the company.',
+    businessImpact: 'Customer contact and account data are exposed. The business takes the API offline, loses digital sales, notifies regulators and customers, funds monitoring support, and faces questions about secure design and previous penetration-test findings.',
+    considerations: [
+      'Valid HTTP responses can still represent unauthorised access.',
+      'Rate limits delay automation but do not replace object-level authorisation.',
+      'Complete request, object, response-size, and data-classification evidence is needed to scope affected people.',
+    ],
+    outcome: 'Abuse detection eventually finds the enumeration pattern, but incomplete object logging makes the first day uncertain. The API is rebuilt with server-side authorisation, bounded identifiers, and tested abuse cases in the release gate.',
+  },
+  themes: ['data-exfiltration', 'cloud-saas', 'detection-response'],
+  stages: {
+    preparation: { action: 'API routes and identifiers are mapped', detail: 'The actor observes mobile traffic and identifies a predictable customer-object parameter.', technique: 'T1595.002 Active Scanning: Vulnerability Scanning', sourceId: 'proxy-dns', signal: 'API discovery, enumeration errors, and route requests', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Object-authorisation flaw returns another customer record', detail: 'The API authenticates the caller but fails to authorise access to the requested object.', technique: 'T1190 Exploit Public-Facing Application', sourceId: 'saas-audit', signal: 'Caller, route, object, authorisation decision, and response code', evidenceStatus: 'absent', gapType: 'telemetry' },
+    misuse: { action: 'Sequential object identifiers are requested', detail: 'Automation rotates addresses and sessions while requesting records outside each account.', technique: 'T1213 Data from Information Repositories', sourceId: 'siem-enrichment', signal: 'Cross-session object enumeration and response pattern', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Customer profiles are accumulated', detail: 'Successful responses are parsed and stored by the attacker.', technique: 'T1213 Data from Information Repositories', sourceId: 'saas-audit', signal: 'Returned object identifiers, fields, classification, and byte count', evidenceStatus: 'partial', gapType: 'telemetry' },
+    exfiltration: { action: 'Regulated data leaves in ordinary API responses', detail: 'The application itself delivers the records over its approved HTTPS channel. No direct ATT&CK mapping is asserted for this business-logic path.', sourceId: 'proxy-dns', signal: 'Response volume by caller, route, object, and destination', evidenceStatus: 'partial', gapType: 'detection' },
+    concealment: { action: 'Requests are spread across infrastructure', detail: 'Low request rates and rotating sources prevent simple threshold alerts.', technique: 'T1090 Proxy', sourceId: 'proxy-dns', signal: 'Source network, client fingerprint, and distributed request pattern', evidenceStatus: 'partial', gapType: 'detection' },
+    response: { action: 'Vulnerable route is disabled and exposure is scoped', detail: 'Teams patch authorisation, preserve request records, identify affected customers, and monitor replay.', sourceId: 'siem-enrichment', signal: 'Route disablement, patch validation, affected-object list, and notification decision', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const softwareSupplyChainCompromise = createCuratedScenario({
+  id: 'software-supply-chain-compromise',
+  kind: 'cyber',
+  title: 'Compromised software dependency reaches production',
+  actor: 'External actor who takes over a trusted package-maintainer account and publishes a malicious dependency update.',
+  objective: 'Execute code inside build and production environments through an update that appears trusted.',
+  summary: 'Tests dependency provenance, build isolation, signing, secret exposure, deployment approval, runtime behaviour, and rapid package rollback.',
+  story: {
+    title: 'The trusted update with an extra post-install step',
+    narrative: 'A fictional development team accepts an automated patch update for a widely used package. The maintainer account has been taken over, and the release adds a post-install script that reads build credentials and calls an attacker-controlled service. The signed application build carries the compromised dependency into production.',
+    businessImpact: 'Build secrets and customer-service credentials may be exposed across several products. Releases halt, engineering rebuilds trusted artifacts, customers demand software bills of materials, and revenue slips while the company proves which versions and environments were affected.',
+    considerations: [
+      'A valid package signature proves publisher identity, not benign code.',
+      'Lockfiles, provenance, build logs, artifact hashes, and deployment records must form one chain.',
+      'Emergency rollback must avoid reusing credentials exposed during the compromised build.',
+    ],
+    outcome: 'Runtime egress detection identifies the callback after deployment. The package is pinned and removed, credentials are rotated, products are rebuilt from clean workers, and provenance plus isolated builds become release requirements.',
+  },
+  themes: ['third-party', 'credential-misuse', 'cloud-saas', 'detection-response'],
+  stages: {
+    preparation: { action: 'Trusted package-maintainer account is taken over', detail: 'The actor obtains publishing access to a dependency already approved by development teams. The model does not speculate about how the maintainer account was compromised.', sourceId: 'saas-audit', signal: 'Publisher account, package release, provenance, and maintainer change', evidenceStatus: 'partial', gapType: 'telemetry' },
+    access: { action: 'Automated dependency update enters the build', detail: 'A routine update job accepts the new version without additional review.', technique: 'T1195.001 Supply Chain Compromise: Compromise Software Dependencies and Development Tools', sourceId: 'file-access', signal: 'Manifest, lockfile, reviewer, package hash, and provenance', evidenceStatus: 'partial', gapType: 'detection' },
+    misuse: { action: 'Post-install code reads build credentials', detail: 'The dependency executes inside a networked build worker with access to deployment secrets.', technique: 'T1552.001 Unsecured Credentials: Credentials In Files', sourceId: 'endpoint-edr', signal: 'Build process lineage, file reads, environment access, and child process', evidenceStatus: 'absent', gapType: 'telemetry' },
+    collection: { action: 'Credentials and environment metadata are gathered', detail: 'The script enumerates cloud tokens, repository credentials, and target environments.', technique: 'T1555 Credentials from Password Stores', sourceId: 'cloud-storage', signal: 'Secret access by build identity and artifact context', evidenceStatus: 'partial', gapType: 'detection' },
+    exfiltration: { action: 'Build secrets are sent to an external service', detail: 'The worker makes an HTTPS request that resembles ordinary package traffic.', technique: 'T1567 Exfiltration Over Web Service', sourceId: 'proxy-dns', signal: 'Build-worker destination, process, bytes, and domain age', evidenceStatus: 'partial', gapType: 'detection' },
+    concealment: { action: 'Malicious code is minified inside the dependency', detail: 'The added behaviour is hidden in generated files and removed from a later release.', technique: 'T1027 Obfuscated Files or Information', sourceId: 'file-access', signal: 'Package-content diff, hash, provenance, and release history', evidenceStatus: 'present' },
+    response: { action: 'Affected builds are recalled and rebuilt', detail: 'Teams quarantine the package, rotate exposed credentials, identify artifacts, and rebuild from clean workers.', sourceId: 'siem-enrichment', signal: 'Affected-version inventory, credential rotation, rollback, and clean-build validation', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const publicCloudExposure = createCuratedScenario({
+  id: 'public-cloud-storage-exposure',
+  kind: 'cyber',
+  title: 'Public cloud storage exposure and data harvesting',
+  actor: 'External opportunist scanning for publicly accessible cloud storage containing business and customer data.',
+  objective: 'Download exposed objects before the owner detects and removes public access.',
+  summary: 'Tests secure defaults, policy-as-code, configuration-change alerts, object access logging, classification, exposure scoping, and rapid access revocation.',
+  story: {
+    title: 'The backup bucket indexed overnight',
+    narrative: 'A fictional analytics team creates a temporary cloud bucket for a migration and applies a broad read policy to solve a permissions problem. The exception is never removed. An internet scan finds the bucket overnight and downloads customer exports and internal backups before a researcher reports it the next morning.',
+    businessImpact: 'The company cannot assume the data remained private. Customer notification, regulatory assessment, forensic support, and credential rotation begin immediately, while the migration pauses and trust in cloud governance falls.',
+    considerations: [
+      'Public exposure is a control failure even if malicious download cannot be proved.',
+      'Object access logs, requester identity, retention, and classification determine impact.',
+      'Temporary exceptions need an owner, reason, and automatic expiry.',
+    ],
+    outcome: 'Public access is removed quickly, but incomplete data-event logging prevents definitive download scoping. The organisation enforces preventive policy, expiring exceptions, continuous exposure checks, and mandatory logging for sensitive stores.',
+  },
+  themes: ['cloud-saas', 'data-exfiltration', 'detection-response'],
+  stages: {
+    preparation: { action: 'Temporary storage exception is left active', detail: 'A migration bucket receives a broad policy without an expiry or accountable owner.', sourceId: 'cloud-storage', signal: 'Bucket policy, actor, ticket, owner, and exception expiry', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Internet scanner discovers public objects', detail: 'Anonymous requests successfully list or retrieve data.', technique: 'T1530 Data from Cloud Storage', sourceId: 'cloud-storage', signal: 'Anonymous list and object-read events with source context', evidenceStatus: 'partial', gapType: 'telemetry' },
+    misuse: { action: 'Public permission is used outside its intended migration purpose', detail: 'The storage service honours a valid but dangerously broad policy.', technique: 'T1530 Data from Cloud Storage', sourceId: 'saas-audit', signal: 'Policy decision, requester, object, and result', evidenceStatus: 'partial', gapType: 'detection' },
+    collection: { action: 'Customer exports and backups are enumerated', detail: 'Object names and metadata reveal high-value archives.', technique: 'T1213 Data from Information Repositories', sourceId: 'cloud-storage', signal: 'List, object classification, owner, and byte count', evidenceStatus: 'present' },
+    exfiltration: { action: 'Objects are downloaded anonymously', detail: 'Large archives leave through the cloud provider without crossing corporate egress. No transfer-to-cloud-account technique is inferred without destination evidence.', sourceId: 'cloud-storage', signal: 'Object read, source, bytes, requester, and destination context', evidenceStatus: 'absent', gapType: 'telemetry' },
+    concealment: { action: 'No active concealment is required', detail: 'Normal cloud access and missing data-event logs provide sufficient cover.', sourceId: 'siem-enrichment', signal: 'Cloud source freshness and data-event coverage', evidenceStatus: 'absent', gapType: 'telemetry' },
+    response: { action: 'Public access is removed and affected objects are classified', detail: 'Responders block anonymous access, preserve provider records, rotate embedded secrets, and assess notification.', sourceId: 'siem-enrichment', signal: 'Policy removal, affected-object list, credential rotation, and case decision', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
+const availabilityExtortion = createCuratedScenario({
+  id: 'availability-extortion-ddos',
+  kind: 'cyber',
+  title: 'Distributed denial of service and availability extortion',
+  actor: 'External extortion group directing a botnet at customer-facing services and their upstream dependencies.',
+  objective: 'Sustain enough disruption to force payment and damage customer confidence during a critical trading period.',
+  summary: 'Tests upstream protection, service telemetry, dependency capacity, escalation, customer communications, and recovery under repeated denial-of-service waves.',
+  story: {
+    title: 'The sale that disappeared behind a traffic wall',
+    narrative: 'Minutes before a fictional retailer launches its annual sale, traffic surges far beyond forecast. Most requests come from distributed consumer devices and imitate legitimate browsing. The storefront, payment API, and support portal degrade together while an extortion message threatens larger waves unless the company pays.',
+    businessImpact: 'Digital revenue stops during the highest-value trading window, call centres overload, marketing spend is wasted, and customers question whether failed payments were charged. Contractual and reputational damage continues after service returns.',
+    considerations: [
+      'Flash crowds and partner retries can resemble attack traffic.',
+      'Strong controls should preserve critical journeys, not merely absorb bandwidth.',
+      'Provider escalation, business prioritisation, status communications, and evidence capture must run in parallel.',
+    ],
+    outcome: 'Upstream filtering restores checkout but lower-priority services remain degraded for hours. The business refuses payment, tunes protection from captured traffic, separates critical dependencies, and rehearses capacity and communication decisions before the next peak.',
+  },
+  themes: ['sabotage', 'ransomware', 'detection-response'],
+  stages: {
+    preparation: { action: 'Botnet capacity and public dependencies are mapped', detail: 'The actor identifies origins, APIs, DNS, and third-party services needed for customer journeys.', technique: 'T1583.005 Acquire Infrastructure: Botnet', sourceId: 'proxy-dns', signal: 'Reconnaissance requests, route discovery, and dependency probing', evidenceStatus: 'partial', gapType: 'detection' },
+    access: { action: 'Distributed traffic reaches public services', detail: 'Requests use ordinary protocols and many legitimate-looking clients.', technique: 'T1498 Network Denial of Service', sourceId: 'proxy-dns', signal: 'Source, request rate, protocol, route, and policy decision', evidenceStatus: 'present' },
+    misuse: { action: 'Expensive application paths exhaust shared capacity', detail: 'Search, login, and checkout requests consume application and database resources.', technique: 'T1499.003 Application Exhaustion Flood', sourceId: 'saas-audit', signal: 'Route latency, errors, dependency calls, and resource saturation', evidenceStatus: 'partial', gapType: 'telemetry' },
+    collection: { action: 'No data collection is modelled', detail: 'The objective is service disruption and extortion rather than information theft.', sourceId: 'file-access', signal: 'Sensitive object access evidence', evidenceStatus: 'present', actorPresent: false },
+    exfiltration: { action: 'No data transfer is modelled', detail: 'Failed transactions must still be checked for confidentiality or integrity impact.', sourceId: 'dlp', signal: 'Unexpected data movement during the incident', evidenceStatus: 'present', actorPresent: false },
+    concealment: { action: 'Attack traffic blends with genuine demand', detail: 'Distributed clients and realistic request patterns increase false-positive cost.', technique: 'T1090 Proxy', sourceId: 'siem-enrichment', signal: 'Client reputation, fingerprint, behaviour, and known-good traffic comparison', evidenceStatus: 'partial', gapType: 'detection' },
+    response: { action: 'Upstream mitigation and business continuity are activated', detail: 'Teams filter traffic, protect critical routes, scale dependencies, and communicate service state.', sourceId: 'siem-enrichment', signal: 'Incident owner, provider action, service recovery, customer communication, and evidence export', evidenceStatus: 'partial', gapType: 'response', controlEffect: 'contain' },
+  },
+});
+
 export const threatModel: ThreatModel = {
-  version: 'threat-model-0.3.0',
+  version: 'threat-model-0.4.0',
   note: 'Synthetic attack scenarios for assessing evidence, controls, gaps, and remediation. The 2D map and 3D view use the same data.',
   safety:
     'Demo data only. Do not enter private logs, tenant identifiers, hostnames, credentials, or unsafe samples into this public tool.',
@@ -1165,6 +1476,11 @@ export const threatModel: ThreatModel = {
     internalPrivilegedSabotage,
     cyberPhishingToRansomware,
     cyberSaasTokenTheft,
+    businessEmailCompromise,
+    publicApiDataBreach,
+    softwareSupplyChainCompromise,
+    publicCloudExposure,
+    availabilityExtortion,
     thirdPartyCloudExport,
     breakGlassCredentialMisuse,
     negligentExternalSharing,

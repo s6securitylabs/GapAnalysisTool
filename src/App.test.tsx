@@ -196,8 +196,8 @@ describe('App integrated assessment experience', () => {
     const scenarioSelect = screen.getByRole('combobox', { name: /Threat scenario/i });
     expect(screen.queryByRole('group', { name: /Threat scenario/i })).not.toBeInTheDocument();
     expect(scenarioSelect).toHaveValue('internal-pre-resignation-exfiltration');
-    expect(scenarioSelect.querySelectorAll('option')).toHaveLength(12);
-    expect(screen.getByText(/12 attack scenarios/i)).toBeInTheDocument();
+    expect(scenarioSelect.querySelectorAll('option')).toHaveLength(17);
+    expect(screen.getByText(/17 attack scenarios/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Internal/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/data exfiltration/i)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /Pre-resignation data theft/i })).not.toBeInTheDocument();
@@ -217,6 +217,7 @@ describe('App integrated assessment experience', () => {
     await userEvent.click(screen.getByRole('button', { name: /Browse scenario library/i }));
     expect(screen.getByRole('region', { name: /Attack scenario library/i })).toBeInTheDocument();
     expect(screen.getByText(/9 insider and workforce scenarios/i)).toBeInTheDocument();
+    expect(screen.getByText(/8 external cyber scenarios/i)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /USB data theft/i })).toBeInTheDocument();
     expect(screen.getAllByText(/T1052\.001/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Indicative ATT&CK references/i)).toBeInTheDocument();
@@ -224,6 +225,12 @@ describe('App integrated assessment experience', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: /Scenario type/i }), 'cyber');
     expect(screen.queryByRole('radio', { name: /USB data theft/i })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Phishing to ransomware/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Business email compromise/i })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('radio', { name: /Business email compromise/i }));
+    expect(screen.getByRole('heading', { name: /The invoice that changed banks/i })).toBeInTheDocument();
+    expect(screen.getByText(/Damage to the business/i)).toBeInTheDocument();
+    expect(screen.getByText(/Independent supplier verification and dual approval would prevent the payment/i)).toBeInTheDocument();
   });
 
   it('keeps supporting risk evidence and definitions in the final workflow step only', async () => {

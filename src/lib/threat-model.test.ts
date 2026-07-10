@@ -189,6 +189,7 @@ describe('model summary and export', () => {
   it('exports a printable object that states accepted risk contributes no coverage', () => {
     const exported = JSON.parse(serializeScenario(threatModel.scenarios[0]));
     expect(exported.modelVersion).toBe(threatModel.version);
+    expect(exported.scenario.story.title).toBe(threatModel.scenarios[0].story.title);
     expect(exported.coverage.note).toMatch(/Accepted risk contributes no coverage/);
     expect(exported.safety).toMatch(/Demo data only/i);
     expect(exported.stages).toHaveLength(7);

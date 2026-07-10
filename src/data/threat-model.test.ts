@@ -16,13 +16,38 @@ describe('canonical threat model', () => {
     expect(kinds).toEqual(new Set(['internal', 'cyber']));
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal').length).toBeGreaterThan(0);
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'cyber').length).toBeGreaterThan(0);
-    expect(threatModel.scenarios).toHaveLength(12);
+    expect(threatModel.scenarios).toHaveLength(17);
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal')).toHaveLength(9);
+    expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'cyber')).toHaveLength(8);
   });
 
   it('keeps scenario identifiers unique', () => {
     const ids = threatModel.scenarios.map((scenario) => scenario.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('gives every scenario a fictional business story with impact, considerations, and an outcome', () => {
+    for (const scenario of threatModel.scenarios) {
+      expect(scenario.story.title.trim()).not.toBe('');
+      expect(scenario.story.narrative.length).toBeGreaterThan(120);
+      expect(scenario.story.businessImpact.length).toBeGreaterThan(80);
+      expect(scenario.story.considerations.length).toBeGreaterThanOrEqual(3);
+      expect(scenario.story.outcome.length).toBeGreaterThan(80);
+    }
+  });
+
+  it('covers major external cyber loss events', () => {
+    const cyberIds = new Set(threatModel.scenarios.filter((scenario) => scenario.kind === 'cyber').map((scenario) => scenario.id));
+    expect(cyberIds).toEqual(new Set([
+      'cyber-phishing-to-ransomware',
+      'cyber-saas-token-theft',
+      'business-email-compromise',
+      'public-api-data-breach',
+      'software-supply-chain-compromise',
+      'public-cloud-storage-exposure',
+      'availability-extortion-ddos',
+      'detection-pipeline-suppression',
+    ]));
   });
 
   it('includes indicative ATT&CK references for adversarial curated scenarios', () => {
