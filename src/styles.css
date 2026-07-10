@@ -704,6 +704,33 @@ small {
   padding: 14px;
 }
 
+.remediation-editor {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.remediation-editor summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.remediation-form {
+  margin-top: 12px;
+}
+
+.governance-warning {
+  margin-top: 12px;
+  border: 1px solid #e8b85d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff9e8;
+}
+
+.governance-warning .prose-list {
+  margin: 6px 0 0;
+}
+
 .scenario-card.stopped,
 .vector-card.covered {
   border-left: 4px solid var(--success);

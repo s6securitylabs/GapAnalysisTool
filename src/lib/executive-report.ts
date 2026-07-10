@@ -1,5 +1,6 @@
 import type { ThreatScenario, LogSource, LogSourceId } from '../data/catalogue';
 import type { SourceMetadata } from '../data/source-metadata';
+import type { RemediationState } from './remediation';
 import { getScenarioStatus, type AssessmentMetadata, type AssessmentMode, type SourceVerificationSummary } from './assessment';
 import { formatPercent, type CoverageSummary } from './coverage';
 
@@ -22,10 +23,12 @@ export function buildExecutiveReport(params: {
   scenarios: ThreatScenario[];
   sources: LogSource[];
   sourceMetadata: Record<LogSourceId, SourceMetadata>;
+  remediationState?: RemediationState;
   catalogueVersion?: string;
   generatedAt?: string;
 }): ExecutiveReport {
   const { mode, metadata, summary, verificationSummary, scenarios, sources, sourceMetadata } = params;
+  const remediationFor = (sourceId: LogSourceId) => params.remediationState?.[sourceId] ?? sourceMetadata[sourceId].remediation;
   const readySources = sources.filter((source) => verificationSummary.get(source.id)?.effective);
   const partialSources = sources.filter((source) => {
     const item = verificationSummary.get(source.id);
@@ -34,8 +37,8 @@ export function buildExecutiveReport(params: {
   const acceptedRiskSources = sources.filter((source) => verificationSummary.get(source.id)?.acceptedRisk);
   const topGaps = summary.topMissingSources.slice(0, 5).map((item) => {
     const source = sources.find((entry) => entry.id === item.sourceId);
-    const plan = sourceMetadata[item.sourceId].remediation;
-    return `${source?.name ?? item.sourceId}: impacts ${item.count} vectors, weighted gap ${item.weightedGap.toFixed(1)}, owner ${plan.gapOwner}, target ${plan.targetDate}`;
+    const plan = remediationFor(item.sourceId);
+    return `${source?.name ?? item.sourceId}: impacts ${item.count} vectors, weighted gap ${item.weightedGap.toFixed(1)}, accountable owner ${plan.gapOwner}, engineering owner ${plan.engineeringOwner}, target ${plan.targetDate}, status ${plan.status}`;
   });
   const weakestVectors = summary.vectors
     .filter((item) => item.score < 0.8)
@@ -68,7 +71,7 @@ export function buildExecutiveReport(params: {
       : 'Demo mode is active, so seeded evidence should not be mistaken for a production assessment.',
   ];
   const recommendedInvestments = summary.topMissingSources.slice(0, 4).map((item) => {
-    const plan = sourceMetadata[item.sourceId].remediation;
+    const plan = remediationFor(item.sourceId);
     const source = sources.find((entry) => entry.id === item.sourceId);
     return `${source?.name ?? item.sourceId}: ${plan.recommendation} Owner: ${plan.gapOwner}.`;
   });
@@ -106,6 +109,13 @@ export function buildExecutiveReport(params: {
     ``,
     `## Recommended Investments`,
     ...recommendedInvestments.map((item) => `- ${item}`),
+    ``,
+    `## Remediation Governance`,
+    ...summary.topMissingSources.slice(0, 5).map((item) => {
+      const plan = remediationFor(item.sourceId);
+      const source = sources.find((entry) => entry.id === item.sourceId);
+      return `- ${source?.name ?? item.sourceId}: ${plan.status}; priority ${plan.priority}; SLA ${plan.slaDays} days; business owner ${plan.businessOwner}; detection/use case ${plan.detectionUseCase}; validation ${plan.validationMethod}; evidence ${plan.evidenceReference || 'not yet recorded'}.`;
+    }),
     ``,
     `## Scenario Snapshot`,
     ...scenarioSummary.map((item) => `- ${item}`),

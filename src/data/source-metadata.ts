@@ -3,18 +3,27 @@ import type { LogSourceId } from './catalogue';
 export type RemediationStatus = 'not-started' | 'planned' | 'in-progress' | 'blocked' | 'accepted-risk' | 'verified';
 export type RemediationPriority = 'critical' | 'high' | 'medium' | 'low';
 
+export interface RemediationRecord {
+  gapOwner: string;
+  businessOwner: string;
+  engineeringOwner: string;
+  recommendation: string;
+  targetDate: string;
+  slaDays: number;
+  status: RemediationStatus;
+  priority: RemediationPriority;
+  detectionUseCase: string;
+  validationMethod: string;
+  evidenceReference: string;
+  acceptedRiskRationale: string;
+  riskReviewDate: string;
+  notes: string;
+}
+
 export interface SourceMetadata {
   glossaryTerms: string[];
   privacyNotes: string[];
-  remediation: {
-    gapOwner: string;
-    businessOwner: string;
-    recommendation: string;
-    targetDate: string;
-    status: RemediationStatus;
-    priority: RemediationPriority;
-    notes: string;
-  };
+  remediation: RemediationRecord;
 }
 
 export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
@@ -24,10 +33,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Identity engineering',
       businessOwner: 'IAM program manager',
+      engineeringOwner: 'Identity engineering',
       recommendation: 'Validate sign-in, MFA, and session-end telemetry with searchable retention and actor/device correlation.',
       targetDate: '2026-08-01',
+      slaDays: 30,
       status: 'planned',
       priority: 'critical',
+      detectionUseCase: 'Risky session and access expansion correlation',
+      validationMethod: 'Replay representative sign-in, MFA, and session-revocation events and confirm searchable normalized fields.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Identity evidence is foundational to most scenarios.',
     },
   },
@@ -37,10 +53,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Endpoint security',
       businessOwner: 'Workplace engineering',
+      engineeringOwner: 'Endpoint security',
       recommendation: 'Confirm process lineage, file copy, removable-media, and tamper events on managed endpoints.',
       targetDate: '2026-08-15',
+      slaDays: 30,
       status: 'in-progress',
       priority: 'critical',
+      detectionUseCase: 'Collection, removable-media transfer, and sensor tamper',
+      validationMethod: 'Run an approved synthetic archive, file-copy, and agent-health test and verify process lineage and alert readback.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Needed for staging, concealment, and USB exfiltration evidence.',
     },
   },
@@ -50,10 +73,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Messaging security',
       businessOwner: 'Collaboration services owner',
+      engineeringOwner: 'Messaging security',
       recommendation: 'Enable mailbox audit verification for forwarding, sent mail, attachments, and admin actions.',
       targetDate: '2026-08-22',
+      slaDays: 45,
       status: 'planned',
       priority: 'high',
+      detectionUseCase: 'External forwarding, attachment transfer, and delegated mailbox access',
+      validationMethod: 'Create approved synthetic forwarding and attachment events and confirm actor, recipient, rule, and message correlation.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Use metadata and approved audit trails before requesting content access.',
     },
   },
@@ -63,10 +93,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Data protection engineering',
       businessOwner: 'Privacy and data governance',
+      engineeringOwner: 'Data protection engineering',
       recommendation: 'Prove DLP inspection and disposition by channel so email, endpoint, SaaS, and web are not conflated.',
       targetDate: '2026-09-05',
+      slaDays: 45,
       status: 'planned',
       priority: 'high',
+      detectionUseCase: 'Sensitive-data movement across governed channels',
+      validationMethod: 'Use approved synthetic labelled data to exercise each in-scope channel and record policy disposition and exceptions.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Common false-confidence area when only one channel is enforced.',
     },
   },
@@ -76,10 +113,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Platform telemetry',
       businessOwner: 'Engineering systems owner',
+      engineeringOwner: 'Platform telemetry',
       recommendation: 'Prioritize read/export/delete and permission-change audit coverage on sensitive stores.',
       targetDate: '2026-08-29',
+      slaDays: 30,
       status: 'planned',
       priority: 'critical',
+      detectionUseCase: 'Unusual sensitive-object read, export, delete, and permission change',
+      validationMethod: 'Replay approved object read, export, and permission-change actions and verify classification and owner enrichment.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'High leverage for IP theft and unusual-valid-access cases.',
     },
   },
@@ -89,10 +133,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Network security',
       businessOwner: 'Remote access service owner',
+      engineeringOwner: 'Network security',
       recommendation: 'Verify VPN login/logout and posture evidence where remote access is part of the operating model.',
       targetDate: '2026-09-12',
+      slaDays: 60,
       status: 'not-started',
       priority: 'medium',
+      detectionUseCase: 'Remote-session correlation and risky device posture',
+      validationMethod: 'Exercise approved allow and deny paths and verify session start, end, network attribution, and posture fields.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Useful context when other sources lack trusted device details.',
     },
   },
@@ -102,10 +153,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Network security',
       businessOwner: 'Internet egress owner',
+      engineeringOwner: 'Network security',
       recommendation: 'Improve user/device attribution and upload visibility for outbound web and storage paths.',
       targetDate: '2026-09-19',
+      slaDays: 45,
       status: 'blocked',
       priority: 'high',
+      detectionUseCase: 'Unusual outbound upload to external storage',
+      validationMethod: 'Generate an approved synthetic upload and confirm user, device, destination, disposition, and byte-count readback.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Blocked until shared egress identity mapping is fixed.',
     },
   },
@@ -115,10 +173,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'SaaS platform engineering',
       businessOwner: 'Business applications director',
+      engineeringOwner: 'SaaS platform engineering',
       recommendation: 'Standardize evidence for download/export/share and admin actions across priority SaaS systems.',
       targetDate: '2026-08-12',
+      slaDays: 30,
       status: 'in-progress',
       priority: 'critical',
+      detectionUseCase: 'Bulk export, external sharing, and administrative configuration change',
+      validationMethod: 'Run approved synthetic export, share, and admin-change actions in each priority application and verify normalized readback.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'One of the highest-leverage sources for business-system misuse.',
     },
   },
@@ -127,11 +192,18 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     privacyNotes: ['HR and case data must stay minimum-necessary, approval-backed, and never used as standalone proof of risk.'],
     remediation: {
       gapOwner: 'HR systems',
-      businessOwner: 'Internal scenario program manager',
+      businessOwner: 'Threat scenario program manager',
+      engineeringOwner: 'HR systems',
       recommendation: 'Provide tightly governed lifecycle and approval context with audited investigator access.',
       targetDate: '2026-08-26',
+      slaDays: 30,
       status: 'planned',
       priority: 'critical',
+      detectionUseCase: 'Governed workforce-event context for case triage',
+      validationMethod: 'Use synthetic workforce lifecycle records to verify minimum-necessary fields, approvals, access audit, and case correlation.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Sensitive workforce context requires governance and corroboration.',
     },
   },
@@ -141,10 +213,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Corporate security systems',
       businessOwner: 'Physical security manager',
+      engineeringOwner: 'Corporate security systems',
       recommendation: 'Document when badge telemetry is appropriate, searchable, and approval-gated for investigations.',
       targetDate: '2026-09-02',
+      slaDays: 60,
       status: 'planned',
       priority: 'medium',
+      detectionUseCase: 'Approved restricted-area and cyber-activity correlation',
+      validationMethod: 'Use synthetic badge events to verify approval gating, employee correlation, retention, and access auditing.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Useful for restricted-area correlation, not generalized workforce monitoring.',
     },
   },
@@ -154,10 +233,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Privileged access engineering',
       businessOwner: 'Infrastructure operations director',
+      engineeringOwner: 'Privileged access engineering',
       recommendation: 'Prove session recording, command evidence, and ticket correlation for privileged activity.',
       targetDate: '2026-08-18',
+      slaDays: 30,
       status: 'planned',
       priority: 'critical',
+      detectionUseCase: 'Privileged misuse and unapproved destructive action',
+      validationMethod: 'Exercise an approved privileged session and confirm role activation, command, session, ticket, and approval correlation.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Critical for destructive action and privileged misuse scenarios.',
     },
   },
@@ -167,10 +253,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Cloud platform security',
       businessOwner: 'Cloud operations manager',
+      engineeringOwner: 'Cloud platform security',
       recommendation: 'Enable sensitive object read/share/delete audit trails and map them to ownership and classification.',
       targetDate: '2026-08-30',
+      slaDays: 45,
       status: 'planned',
       priority: 'high',
+      detectionUseCase: 'Sensitive-object read, external share, delete, and policy change',
+      validationMethod: 'Run approved synthetic object and policy actions against a test location and verify principal, classification, owner, and outcome.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'Volume and cost make selective enablement important.',
     },
   },
@@ -180,10 +273,17 @@ export const sourceMetadata: Record<LogSourceId, SourceMetadata> = {
     remediation: {
       gapOwner: 'Detection engineering',
       businessOwner: 'SOC manager',
+      engineeringOwner: 'Detection engineering',
       recommendation: 'Validate freshness, parsing health, retention, searchable fields, and entity enrichment for each mapped source.',
       targetDate: '2026-08-08',
+      slaDays: 14,
       status: 'in-progress',
       priority: 'critical',
+      detectionUseCase: 'Telemetry health, entity enrichment, and correlation assurance',
+      validationMethod: 'Run source canaries and representative queries; record freshness, parse success, field population, retention, and dashboard readback.',
+      evidenceReference: '',
+      acceptedRiskRationale: '',
+      riskReviewDate: '',
       notes: 'This is the bridge between collection and investigation-ready use.',
     },
   },

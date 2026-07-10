@@ -1,5 +1,6 @@
 import type { LogSourceId } from '../data/catalogue';
 import type { AssessmentMetadata, AssessmentMode, SourceAssessmentState } from './assessment';
+import { normalizeRemediationState, type RemediationState } from './remediation';
 
 export const snapshotStorageKey = 'gaps-analysis-tool.snapshots';
 
@@ -10,6 +11,7 @@ export interface AssessmentSnapshot {
   mode: AssessmentMode;
   metadata: AssessmentMetadata;
   sourceState: Record<LogSourceId, SourceAssessmentState>;
+  remediationState: RemediationState;
 }
 
 export interface SnapshotComparison {
@@ -26,12 +28,15 @@ export interface ComparisonMetricsInput {
   evidenceCheckCount: number;
 }
 
-export function createSnapshot(params: Omit<AssessmentSnapshot, 'id' | 'createdAt'>): AssessmentSnapshot {
+export function createSnapshot(
+  params: Omit<AssessmentSnapshot, 'id' | 'createdAt' | 'remediationState'> & { remediationState?: RemediationState },
+): AssessmentSnapshot {
   const stamp = new Date().toISOString();
   return {
     id: `${params.metadata.name || 'assessment'}-${stamp}`,
     createdAt: stamp,
     ...params,
+    remediationState: normalizeRemediationState(params.remediationState),
   };
 }
 
@@ -44,7 +49,7 @@ export function parseSnapshot(json: string): AssessmentSnapshot {
   if (!parsed?.id || !parsed?.catalogueVersion || !parsed?.sourceState) {
     throw new Error('Invalid snapshot file');
   }
-  return parsed;
+  return { ...parsed, remediationState: normalizeRemediationState(parsed.remediationState) };
 }
 
 export function loadSnapshots(storage: Pick<Storage, 'getItem'>): AssessmentSnapshot[] {
@@ -53,7 +58,9 @@ export function loadSnapshots(storage: Pick<Storage, 'getItem'>): AssessmentSnap
 
   try {
     const parsed = JSON.parse(raw) as AssessmentSnapshot[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((snapshot) => ({ ...snapshot, remediationState: normalizeRemediationState(snapshot.remediationState) }))
+      : [];
   } catch {
     return [];
   }

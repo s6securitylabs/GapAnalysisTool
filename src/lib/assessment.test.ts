@@ -12,6 +12,7 @@ import {
 const sources = catalogue.logSources;
 const idp = sources.find((source) => source.id === 'idp-auth')!;
 const idpCriticalIds = idp.verificationChecks.filter((check) => check.priority === 'critical').map((check) => check.id);
+const evidenceRecord = { evidenceReference: 'TEST-1', validatedBy: 'Reviewer', validatedAt: '2026-07-10' };
 
 function stateWith(overrides: Partial<Record<string, SourceAssessmentState>>) {
   const base = createInitialAssessmentState('real');
@@ -22,11 +23,22 @@ describe('buildVerificationSummary gating', () => {
   it('marks a source investigation-ready only when every critical check is verified', () => {
     const summary = buildVerificationSummary(
       sources,
-      stateWith({ 'idp-auth': { maturity: 'investigation-ready', verifiedCheckIds: idpCriticalIds } }),
+      stateWith({ 'idp-auth': { maturity: 'investigation-ready', verifiedCheckIds: idpCriticalIds, ...evidenceRecord } }),
     );
     const idpState = summary.get('idp-auth')!;
     expect(idpState.effective).toBe(true);
     expect(idpState.readinessScore).toBe(1);
+  });
+
+  it('does not close coverage when verification has no evidence provenance', () => {
+    const summary = buildVerificationSummary(
+      sources,
+      stateWith({ 'idp-auth': { maturity: 'investigation-ready', verifiedCheckIds: idpCriticalIds } }),
+    );
+
+    expect(summary.get('idp-auth')!.effective).toBe(false);
+    expect(summary.get('idp-auth')!.evidenceRecorded).toBe(false);
+    expect(summary.get('idp-auth')!.readinessScore).toBeLessThan(0.8);
   });
 
   it('does not treat investigation-ready as effective when a critical check is missing', () => {
@@ -95,7 +107,7 @@ describe('getScenarioStatus', () => {
       Object.fromEntries(
         scenario.criticalSources.map((id) => {
           const source = sources.find((entry) => entry.id === id)!;
-          return [id, { maturity: 'investigation-ready', verifiedCheckIds: source.verificationChecks.filter((c) => c.priority === 'critical').map((c) => c.id) }];
+          return [id, { maturity: 'investigation-ready', verifiedCheckIds: source.verificationChecks.filter((c) => c.priority === 'critical').map((c) => c.id), ...evidenceRecord }];
         }),
       ),
     );
@@ -107,7 +119,7 @@ describe('getScenarioStatus', () => {
     const source = sources.find((entry) => entry.id === firstCritical)!;
     const summary = buildVerificationSummary(
       sources,
-      stateWith({ [firstCritical]: { maturity: 'investigation-ready', verifiedCheckIds: source.verificationChecks.filter((c) => c.priority === 'critical').map((c) => c.id) } }),
+      stateWith({ [firstCritical]: { maturity: 'investigation-ready', verifiedCheckIds: source.verificationChecks.filter((c) => c.priority === 'critical').map((c) => c.id), ...evidenceRecord } }),
     );
     expect(getScenarioStatus(scenario, summary).status).toBe('partial');
   });

@@ -75,13 +75,15 @@ describe('coverage scoring', () => {
     });
 
     expect(csv.split('\n')[0]).toBe(
-      'assessment_mode,assessment_name,assessment_owner,catalogue_version,generated_at,selected_sources,assessment_caveat,vector_id,domain,severity,vector,coverage,risk_gap_score,status,available_sources,missing_sources,gap_owners,business_owners,target_dates,remediation_statuses,remediation_recommendations,priority_gap_checks,critical_verification_questions,gap_questions,privacy_legal_notes',
+      'assessment_mode,assessment_name,assessment_owner,catalogue_version,generated_at,selected_sources,assessment_caveat,vector_id,domain,severity,vector,coverage,risk_gap_score,status,available_sources,missing_sources,gap_owners,business_owners,engineering_owners,target_dates,remediation_statuses,remediation_recommendations,detection_use_cases,validation_methods,evidence_references,priority_gap_checks,critical_verification_questions,gap_questions,privacy_legal_notes',
     );
     expect(csv).toContain('Quarterly review');
     expect(csv).toContain('IdP authentication');
     expect(csv).toContain('HR / case management');
     expect(csv).toContain('purpose limitation');
     expect(csv).toContain('gap_owners');
+    expect(csv).toContain('detection_use_cases');
+    expect(csv).toContain('validation_methods');
     expect(csv).toContain('critical: HR / case management');
   });
 });

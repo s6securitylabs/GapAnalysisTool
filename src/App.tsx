@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { ThreatModelPanel } from './components/ThreatModelPanel';
 import { catalogue, type ThreatScenario, type LogSource, type LogSourceId } from './data/catalogue';
 import { glossary } from './data/glossary';
-import { sourceMetadata } from './data/source-metadata';
+import { sourceMetadata, type RemediationRecord } from './data/source-metadata';
 import {
   buildSourceReadinessMap,
   buildVerificationDebt,
@@ -29,6 +29,13 @@ import {
   serializeSnapshot,
   type AssessmentSnapshot,
 } from './lib/snapshots';
+import {
+  buildRemediationStats,
+  createInitialRemediationState,
+  normalizeRemediationState,
+  remediationGovernanceWarnings,
+  type RemediationState,
+} from './lib/remediation';
 import './styles.css';
 
 const primaryViews = [
@@ -53,6 +60,7 @@ function App() {
   const [activeView, setActiveView] = useState<AppView>('Overview');
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('demo');
   const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('demo'));
+  const [remediationState, setRemediationState] = useState<RemediationState>(() => createInitialRemediationState());
   const [metadata, setMetadata] = useState<AssessmentMetadata>({
     name: 'FY26 gap analysis readiness review',
     owner: 'Security operations',
@@ -89,9 +97,10 @@ function App() {
         scenarios: catalogue.threatScenarios,
         sources: catalogue.logSources,
         sourceMetadata,
+        remediationState,
         catalogueVersion: catalogue.version,
       }),
-    [assessmentMode, metadata, summary, verificationSummary],
+    [assessmentMode, metadata, remediationState, summary, verificationSummary],
   );
   const domains = useMemo(() => ['All domains', ...new Set(catalogue.riskVectors.map((vector) => vector.domain))], []);
   const filteredVectors = useMemo(
@@ -119,7 +128,7 @@ function App() {
   const topRemediation = summary.topMissingSources[0]
     ? {
         source: sourceById.get(summary.topMissingSources[0].sourceId),
-        metadata: sourceMetadata[summary.topMissingSources[0].sourceId],
+        remediation: remediationState[summary.topMissingSources[0].sourceId],
         count: summary.topMissingSources[0].count,
       }
     : null;
@@ -169,6 +178,43 @@ function App() {
         maturity,
       },
     }));
+    setRemediationState((current) => ({
+      ...current,
+      [sourceId]: {
+        ...current[sourceId],
+        status:
+          maturity === 'accepted-risk'
+            ? 'accepted-risk'
+            : current[sourceId].status === 'accepted-risk'
+              ? 'not-started'
+              : current[sourceId].status,
+      },
+    }));
+  }
+
+  function updateRemediation<K extends keyof RemediationRecord>(
+    sourceId: LogSourceId,
+    field: K,
+    value: RemediationRecord[K],
+  ) {
+    setRemediationState((current) => ({
+      ...current,
+      [sourceId]: { ...current[sourceId], [field]: value },
+    }));
+    if (field === 'status') {
+      setSourceState((current) => ({
+        ...current,
+        [sourceId]: {
+          ...current[sourceId],
+          maturity:
+            value === 'accepted-risk'
+              ? 'accepted-risk'
+              : current[sourceId].maturity === 'accepted-risk'
+                ? 'not-collected'
+                : current[sourceId].maturity,
+        },
+      }));
+    }
   }
 
   function toggleCheck(sourceId: LogSourceId, checkId: string) {
@@ -185,6 +231,17 @@ function App() {
         },
       };
     });
+  }
+
+  function updateSourceEvidence(
+    sourceId: LogSourceId,
+    field: 'evidenceReference' | 'validatedBy' | 'validatedAt',
+    value: string,
+  ) {
+    setSourceState((current) => ({
+      ...current,
+      [sourceId]: { ...current[sourceId], [field]: value },
+    }));
   }
 
   function applyPreset(mode: 'all' | 'baseline' | 'clear') {
@@ -205,6 +262,9 @@ function App() {
           {
             maturity: 'investigation-ready',
             verifiedCheckIds: source.verificationChecks.filter((check) => check.priority !== 'optional').map((check) => check.id),
+            evidenceReference: 'Synthetic walkthrough evidence',
+            validatedBy: 'Demo seed',
+            validatedAt: '2026-01-01',
           },
         ]),
       ) as Record<LogSourceId, SourceAssessmentState>,
@@ -218,6 +278,9 @@ function App() {
         maturity: state === 'ready' ? 'investigation-ready' : 'not-collected',
         verifiedCheckIds:
           state === 'ready' ? source.verificationChecks.filter((check) => check.priority === 'critical').map((check) => check.id) : [],
+        evidenceReference: state === 'ready' ? 'Synthetic walkthrough evidence' : '',
+        validatedBy: state === 'ready' ? 'Demo seed' : '',
+        validatedAt: state === 'ready' ? '2026-01-01' : '',
       },
     }));
   }
@@ -231,6 +294,7 @@ function App() {
         assessmentOwner: metadata.owner,
         catalogueVersion: catalogue.version,
         sourceMetadata,
+        remediationState,
       }),
       'text/csv;charset=utf-8',
     );
@@ -249,6 +313,7 @@ function App() {
           mode: assessmentMode,
           metadata,
           sourceState,
+          remediationState,
         }),
       ),
       'application/json;charset=utf-8',
@@ -261,6 +326,7 @@ function App() {
       mode: assessmentMode,
       metadata,
       sourceState,
+      remediationState,
     });
     const next = saveSnapshot(window.localStorage, snapshot);
     setSnapshots(next);
@@ -278,6 +344,7 @@ function App() {
       setAssessmentMode(imported.mode);
       setMetadata(imported.metadata);
       setSourceState(imported.sourceState);
+      setRemediationState(normalizeRemediationState(imported.remediationState));
       const next = saveSnapshot(window.localStorage, imported);
       setSnapshots(next);
       setSelectedSnapshotId(imported.id);
@@ -343,12 +410,12 @@ function App() {
           <strong>{topRemediation ? topRemediation.source?.name ?? 'Tracked source' : 'No active remediation queue'}</strong>
           <p>
             {topRemediation
-              ? `${topRemediation.metadata.remediation.recommendation}`
+              ? `${topRemediation.remediation.recommendation}`
               : 'All tracked priority source gaps are currently resolved.'}
           </p>
           <small>
             {topRemediation
-              ? `${topRemediation.metadata.remediation.gapOwner} · ${topRemediation.metadata.remediation.targetDate} · ${topRemediation.count} mapped vectors`
+              ? `${topRemediation.remediation.gapOwner} · ${topRemediation.remediation.targetDate} · ${topRemediation.count} mapped vectors`
               : 'Review the report step for export and snapshot actions.'}
           </small>
         </article>
@@ -401,6 +468,7 @@ function App() {
             verificationStats={verificationStats}
             sourceById={sourceById}
             verificationSummary={verificationSummary}
+            remediationState={remediationState}
             onOpenVerify={() => setActiveView('Verify')}
           />
         )}
@@ -412,9 +480,11 @@ function App() {
             sourceState={sourceState}
             verificationSummary={verificationSummary}
             verificationDebt={verificationDebt}
+            remediationState={remediationState}
             onPreset={applyPreset}
             onSourceMaturityChange={updateSourceMaturity}
             onToggleCheck={toggleCheck}
+            onSourceEvidenceChange={updateSourceEvidence}
             onSourceShortcut={setSourceShortcut}
             onOpenNext={() => setActiveView('Scenarios')}
           />
@@ -446,7 +516,12 @@ function App() {
         )}
 
         {activeView === 'Gaps' && (
-          <GapAnalysisPanel summary={summary} onOpenReportHub={() => setActiveView('Report')} verificationSummary={verificationSummary} />
+          <GapAnalysisPanel
+            summary={summary}
+            onOpenReportHub={() => setActiveView('Report')}
+            remediationState={remediationState}
+            onRemediationChange={updateRemediation}
+          />
         )}
 
         {activeView === 'Report' && (
@@ -617,10 +692,11 @@ function ScopePanel(props: {
   verificationStats: ReturnType<typeof buildVerificationStats>;
   sourceById: Map<LogSourceId, LogSource>;
   verificationSummary: ReturnType<typeof buildVerificationSummary>;
+  remediationState: RemediationState;
   onOpenVerify: () => void;
 }) {
   const readySources = [...props.verificationSummary.values()].filter((item) => item.effective).length;
-  const prioritySources = summarySourceRows(props.verificationSummary, props.sourceById);
+  const prioritySources = summarySourceRows(props.verificationSummary, props.sourceById, props.remediationState);
 
   return (
     <section className="grid two-col">
@@ -697,9 +773,11 @@ function VerificationWorkspace({
   sourceState,
   verificationSummary,
   verificationDebt,
+  remediationState,
   onPreset,
   onSourceMaturityChange,
   onToggleCheck,
+  onSourceEvidenceChange,
   onSourceShortcut,
   onOpenNext,
 }: {
@@ -708,9 +786,11 @@ function VerificationWorkspace({
   sourceState: Record<LogSourceId, SourceAssessmentState>;
   verificationSummary: ReturnType<typeof buildVerificationSummary>;
   verificationDebt: VerificationDebtItem[];
+  remediationState: RemediationState;
   onPreset: (mode: 'all' | 'baseline' | 'clear') => void;
   onSourceMaturityChange: (sourceId: LogSourceId, maturity: VerificationMaturity) => void;
   onToggleCheck: (sourceId: LogSourceId, checkId: string) => void;
+  onSourceEvidenceChange: (sourceId: LogSourceId, field: 'evidenceReference' | 'validatedBy' | 'validatedAt', value: string) => void;
   onSourceShortcut: (source: LogSource, state: 'ready' | 'clear') => void;
   onOpenNext?: () => void;
 }) {
@@ -783,6 +863,7 @@ function VerificationWorkspace({
             vector.vector.investigationQuestions.some((question) => question.evidence.some((evidence) => evidence.sourceId === source.id)),
           );
           const metadata = sourceMetadata[source.id];
+          const remediation = remediationState[source.id];
           const isSensitive = ['email', 'hr-case', 'physical-access'].includes(source.id);
           const progressPercent = sourceProgressPercent(verification);
           const sourceStatus = describeSourceStatus(verification);
@@ -823,8 +904,34 @@ function VerificationWorkspace({
               <div className="source-stats">
                 <span>Critical checks {verification.criticalVerified}/{verification.criticalTotal}</span>
                 <span>Total checks {verification.verifiedChecks}/{verification.totalChecks}</span>
-                <span>Gap owner {metadata.remediation.gapOwner}</span>
+                <span>Evidence record {verification.evidenceRecorded ? 'complete' : 'missing'}</span>
+                <span>Gap owner {remediation.gapOwner}</span>
               </div>
+              {!verification.acceptedRisk && !verification.evidenceRecorded && (
+                <p className="warning-copy">Record an evidence reference, validator, and validation date before this source can close coverage.</p>
+              )}
+              <details className="verification-detail">
+                <summary>Evidence provenance</summary>
+                <div className="form-grid remediation-form">
+                  <label className="span-two">
+                    Evidence reference
+                    <input
+                      value={sourceState[source.id].evidenceReference ?? ''}
+                      onChange={(event) => onSourceEvidenceChange(source.id, 'evidenceReference', event.target.value)}
+                      placeholder="Ticket, saved query, test run, dashboard, or evidence package reference"
+                    />
+                  </label>
+                  <label>
+                    Validated by
+                    <input value={sourceState[source.id].validatedBy ?? ''} onChange={(event) => onSourceEvidenceChange(source.id, 'validatedBy', event.target.value)} />
+                  </label>
+                  <label>
+                    Validation date
+                    <input type="date" value={sourceState[source.id].validatedAt ?? ''} onChange={(event) => onSourceEvidenceChange(source.id, 'validatedAt', event.target.value)} />
+                  </label>
+                  <small className="span-two">Reference durable evidence; do not paste raw logs, private content, credentials, or unsafe samples.</small>
+                </div>
+              </details>
               <div className="tag-row">
                 {metadata.glossaryTerms.map((term) => (
                   <span className="tag field" key={`${source.id}-${term}`}>
@@ -869,10 +976,10 @@ function VerificationWorkspace({
                     </div>
                   ))}
                   <div className="list-card">
-                    <strong>{metadata.remediation.recommendation}</strong>
+                    <strong>{remediation.recommendation}</strong>
                     <small>
-                      Owner: {metadata.remediation.gapOwner} · Business owner: {metadata.remediation.businessOwner} · Due: {metadata.remediation.targetDate} · Status:{' '}
-                      {metadata.remediation.status}
+                      Owner: {remediation.gapOwner} · Engineering owner: {remediation.engineeringOwner} · Business owner: {remediation.businessOwner} · Due: {remediation.targetDate} · Status:{' '}
+                      {remediation.status}
                     </small>
                   </div>
                 </div>
@@ -1170,13 +1277,23 @@ function RiskMatrixPanel({
 function GapAnalysisPanel({
   summary,
   onOpenReportHub,
-  verificationSummary,
+  remediationState,
+  onRemediationChange,
 }: {
   summary: CoverageSummary;
   onOpenReportHub: () => void;
-  verificationSummary: ReturnType<typeof buildVerificationSummary>;
+  remediationState: RemediationState;
+  onRemediationChange: <K extends keyof RemediationRecord>(
+    sourceId: LogSourceId,
+    field: K,
+    value: RemediationRecord[K],
+  ) => void;
 }) {
   const missingSources = summary.topMissingSources.slice(0, 8);
+  const remediationStats = buildRemediationStats(
+    remediationState,
+    missingSources.map((item) => item.sourceId),
+  );
 
   return (
     <section className="stack">
@@ -1193,27 +1310,30 @@ function GapAnalysisPanel({
         </div>
         <div className="metric-grid compact-metrics">
           <Metric label="High/critical gaps" value={summary.highRiskGapCount.toString()} />
-          <Metric label="Tracked missing sources" value={missingSources.length.toString()} />
-          <Metric label="Ready sources" value={[...verificationSummary.values()].filter((item) => item.effective).length.toString()} />
-          <Metric label="Partial sources" value={[...verificationSummary.values()].filter((item) => !item.effective && item.readinessScore > 0).length.toString()} />
+          <Metric label="Open actions" value={remediationStats.open.toString()} />
+          <Metric label="Blocked / overdue" value={`${remediationStats.blocked} / ${remediationStats.overdue}`} />
+          <Metric label="Governance warnings" value={(remediationStats.missingAccountability + remediationStats.missingValidationEvidence).toString()} />
         </div>
       </div>
       <div className="backlog-grid">
         {missingSources.map((item) => {
           const source = catalogue.logSources.find((entry) => entry.id === item.sourceId);
           const metadata = sourceMetadata[item.sourceId];
+          const remediation = remediationState[item.sourceId];
+          const governanceWarnings = remediationGovernanceWarnings(remediation);
           return (
             <article className="gap-card" key={item.sourceId}>
               <div className="panel-title-row compact">
                 <h3>{source?.name ?? item.sourceId}</h3>
-                <span className={`pill severity ${metadata.remediation.priority}`}>{metadata.remediation.priority}</span>
+                <span className={`pill severity ${remediation.priority}`}>{remediation.priority}</span>
               </div>
-              <p>{metadata.remediation.recommendation}</p>
+              <p>{remediation.recommendation}</p>
               <div className="source-stats">
-                <span>Gap owner {metadata.remediation.gapOwner}</span>
-                <span>Business owner {metadata.remediation.businessOwner}</span>
-                <span>Target {metadata.remediation.targetDate}</span>
-                <span>Status {metadata.remediation.status}</span>
+                <span>Accountable {remediation.gapOwner || 'Unassigned'}</span>
+                <span>Engineering {remediation.engineeringOwner || 'Unassigned'}</span>
+                <span>Business {remediation.businessOwner || 'Unassigned'}</span>
+                <span>Target {remediation.targetDate || 'Not set'} ({remediation.slaDays}d SLA)</span>
+                <span>Status {remediation.status}</span>
               </div>
               <p className="muted">
                 Impacts {item.count} mapped vectors · weighted gap {item.weightedGap.toFixed(2)}
@@ -1225,6 +1345,47 @@ function GapAnalysisPanel({
                   </div>
                 ))}
               </div>
+              {governanceWarnings.length > 0 && (
+                <div className="governance-warning" role="status">
+                  <strong>Record needs attention</strong>
+                  <ul className="prose-list">
+                    {governanceWarnings.map((warning) => <li key={warning}>{warning}</li>)}
+                  </ul>
+                </div>
+              )}
+              <details className="remediation-editor">
+                <summary>Update remediation record</summary>
+                <div className="form-grid remediation-form">
+                  <label>
+                    Status
+                    <select value={remediation.status} onChange={(event) => onRemediationChange(item.sourceId, 'status', event.target.value as RemediationRecord['status'])}>
+                      {['not-started', 'planned', 'in-progress', 'blocked', 'accepted-risk', 'verified'].map((status) => <option key={status}>{status}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Priority
+                    <select value={remediation.priority} onChange={(event) => onRemediationChange(item.sourceId, 'priority', event.target.value as RemediationRecord['priority'])}>
+                      {['critical', 'high', 'medium', 'low'].map((priority) => <option key={priority}>{priority}</option>)}
+                    </select>
+                  </label>
+                  <label>Accountable owner<input value={remediation.gapOwner} onChange={(event) => onRemediationChange(item.sourceId, 'gapOwner', event.target.value)} /></label>
+                  <label>Engineering owner<input value={remediation.engineeringOwner} onChange={(event) => onRemediationChange(item.sourceId, 'engineeringOwner', event.target.value)} /></label>
+                  <label>Business owner<input value={remediation.businessOwner} onChange={(event) => onRemediationChange(item.sourceId, 'businessOwner', event.target.value)} /></label>
+                  <label>Target date<input type="date" value={remediation.targetDate} onChange={(event) => onRemediationChange(item.sourceId, 'targetDate', event.target.value)} /></label>
+                  <label>SLA days<input type="number" min={1} value={remediation.slaDays} onChange={(event) => onRemediationChange(item.sourceId, 'slaDays', Number(event.target.value))} /></label>
+                  <label className="span-two">Recommendation<textarea rows={2} value={remediation.recommendation} onChange={(event) => onRemediationChange(item.sourceId, 'recommendation', event.target.value)} /></label>
+                  <label className="span-two">Detection / use-case mapping<input value={remediation.detectionUseCase} onChange={(event) => onRemediationChange(item.sourceId, 'detectionUseCase', event.target.value)} /></label>
+                  <label className="span-two">Validation method<textarea rows={2} value={remediation.validationMethod} onChange={(event) => onRemediationChange(item.sourceId, 'validationMethod', event.target.value)} /></label>
+                  <label className="span-two">Evidence reference<input value={remediation.evidenceReference} onChange={(event) => onRemediationChange(item.sourceId, 'evidenceReference', event.target.value)} placeholder="Ticket, test run, query, dashboard, or evidence package reference" /></label>
+                  {remediation.status === 'accepted-risk' && (
+                    <>
+                      <label className="span-two">Accepted-risk rationale<textarea rows={2} value={remediation.acceptedRiskRationale} onChange={(event) => onRemediationChange(item.sourceId, 'acceptedRiskRationale', event.target.value)} /></label>
+                      <label>Risk review date<input type="date" value={remediation.riskReviewDate} onChange={(event) => onRemediationChange(item.sourceId, 'riskReviewDate', event.target.value)} /></label>
+                    </>
+                  )}
+                  <label className="span-two">Working notes<textarea rows={2} value={remediation.notes} onChange={(event) => onRemediationChange(item.sourceId, 'notes', event.target.value)} /></label>
+                </div>
+              </details>
             </article>
           );
         })}
@@ -1437,6 +1598,7 @@ function describeSourceStatus(verification: SourceVerificationSummary) {
 function summarySourceRows(
   verificationSummary: ReturnType<typeof buildVerificationSummary>,
   sourceById: Map<LogSourceId, LogSource>,
+  remediationState: RemediationState,
 ) {
   return [...verificationSummary.entries()]
     .map(([sourceId, verification]) => ({
@@ -1445,7 +1607,7 @@ function summarySourceRows(
       status: describeSourceStatus(verification).label,
       criticalVerified: verification.criticalVerified,
       criticalTotal: verification.criticalTotal,
-      gapOwner: sourceMetadata[sourceId].remediation.gapOwner,
+      gapOwner: remediationState[sourceId].gapOwner,
       sortScore: verification.effective ? 2 : verification.readinessScore > 0 ? 1 : 0,
     }))
     .sort((a, b) => a.sortScore - b.sortScore || a.sourceName.localeCompare(b.sourceName));

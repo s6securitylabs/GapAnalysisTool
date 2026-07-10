@@ -13,6 +13,9 @@ export type VerificationMaturity =
 export interface SourceAssessmentState {
   maturity: VerificationMaturity;
   verifiedCheckIds: string[];
+  evidenceReference?: string;
+  validatedBy?: string;
+  validatedAt?: string;
 }
 
 export interface AssessmentMetadata {
@@ -33,6 +36,7 @@ export interface SourceVerificationSummary {
   criticalTotal: number;
   effective: boolean;
   acceptedRisk: boolean;
+  evidenceRecorded: boolean;
 }
 
 export interface VerificationStats {
@@ -97,6 +101,9 @@ export function createInitialAssessmentState(mode: AssessmentMode): Record<LogSo
           verifiedCheckIds: demoReady
             ? source.verificationChecks.filter((check) => check.priority === 'critical').map((check) => check.id)
             : [],
+          evidenceReference: demoReady ? 'Synthetic walkthrough evidence' : '',
+          validatedBy: demoReady ? 'Demo seed' : '',
+          validatedAt: demoReady ? '2026-01-01' : '',
         },
       ];
     }),
@@ -118,10 +125,14 @@ export function buildVerificationSummary(
       const acceptedRisk = state.maturity === 'accepted-risk';
       // Accepting risk on a source is an explicit decision NOT to hold evidence. It must never
       // inflate coverage/readiness (PRD §13: accepted_risk = 0 for coverage, flagged separately).
+      const evidenceRecorded = Boolean(state.evidenceReference?.trim() && state.validatedBy?.trim() && state.validatedAt);
+      // Keep unsupported "ready" claims below the 0.8 covered threshold. Critical checks
+      // without a durable provenance record are useful partial evidence, not closure.
+      const provenanceWeight = state.maturity === 'investigation-ready' && !evidenceRecorded ? 0.75 : 1;
       const readinessScore = acceptedRisk
         ? 0
-        : round2(maturityWeights[state.maturity] * (criticalChecks.length === 0 ? 1 : 0.4 + criticalRatio * 0.6));
-      const effective = !acceptedRisk && state.maturity === 'investigation-ready' && criticalRatio === 1;
+        : round2(maturityWeights[state.maturity] * (criticalChecks.length === 0 ? 1 : 0.4 + criticalRatio * 0.6) * provenanceWeight);
+      const effective = !acceptedRisk && state.maturity === 'investigation-ready' && criticalRatio === 1 && evidenceRecorded;
 
       return [
         source.id,
@@ -136,6 +147,7 @@ export function buildVerificationSummary(
           criticalTotal: criticalChecks.length,
           effective,
           acceptedRisk,
+          evidenceRecorded,
         },
       ];
     }),

@@ -193,4 +193,23 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('button', { name: /Save locally/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Import snapshot/i })).toBeInTheDocument();
   });
+
+  it('provides an editable remediation lifecycle with accountability and validation evidence', async () => {
+    render(<App />);
+    const workflowNav = screen.getByRole('navigation', { name: /Primary workflow/i });
+
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /^Gaps/i }));
+    await userEvent.click(screen.getAllByText('Update remediation record')[0]);
+
+    expect(screen.getAllByLabelText('Accountable owner').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Engineering owner').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Business owner').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Detection / use-case mapping').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Validation method').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Evidence reference').length).toBeGreaterThan(0);
+
+    await userEvent.selectOptions(screen.getAllByLabelText('Status')[0], 'accepted-risk');
+    expect(screen.getAllByLabelText('Accepted-risk rationale').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Accepted risk needs a review date/i).length).toBeGreaterThan(0);
+  });
 });

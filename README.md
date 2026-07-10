@@ -15,3 +15,13 @@ pnpm run build
 ```
 
 The app is published into SecHub as a static generated artifact under `/gaps-analysis-tool/app/`.
+
+## Product boundaries
+
+The tool is an assessment workspace, not a monitoring or case-management system. It does not ingest raw telemetry, determine intent, create alerts, or prove wrongdoing. Assessment data, remediation records, and snapshots remain in browser memory or local storage until a user explicitly exports them.
+
+Coverage means that required evidence is both usable and verified. Owning a product or collecting a log is not enough: critical checks and investigation-ready maturity are required. Accepted risk remains visible and contributes no coverage.
+
+The 2D attack-chain map is the authoritative review and export view. The 3D simulation is an optional presentation of the same static model and must not introduce independent coverage facts.
+
+See [Assessment guide](docs/ASSESSMENT-GUIDE.md) for workflow, remediation lifecycle, validation evidence, privacy safeguards, and handoff expectations.

@@ -1,5 +1,6 @@
 import type { EvidenceMapping, LogSource, LogSourceId, RiskVector, Severity } from '../data/catalogue';
 import type { SourceMetadata } from '../data/source-metadata';
+import type { RemediationState } from './remediation';
 
 export interface QuestionCoverage {
   questionId: string;
@@ -176,6 +177,7 @@ export interface GapsCsvOptions {
   generatedAt?: string;
   caveat?: string;
   sourceMetadata?: Record<LogSourceId, SourceMetadata>;
+  remediationState?: RemediationState;
 }
 
 export function buildGapsCsv(summary: CoverageSummary, sources: LogSource[], options: GapsCsvOptions = {}): string {
@@ -197,11 +199,18 @@ export function buildGapsCsv(summary: CoverageSummary, sources: LogSource[], opt
             .map((check) => `${check.priority}: ${source.name} - ${check.label}`);
         });
       const privacyNotes = item.missingSources.flatMap((sourceId) => options.sourceMetadata?.[sourceId]?.privacyNotes ?? []);
-      const gapOwners = item.missingSources.map((sourceId) => options.sourceMetadata?.[sourceId]?.remediation.gapOwner ?? '').filter(Boolean);
-      const businessOwners = item.missingSources.map((sourceId) => options.sourceMetadata?.[sourceId]?.remediation.businessOwner ?? '').filter(Boolean);
-      const dueDates = item.missingSources.map((sourceId) => options.sourceMetadata?.[sourceId]?.remediation.targetDate ?? '').filter(Boolean);
-      const remediationPlans = item.missingSources.map((sourceId) => options.sourceMetadata?.[sourceId]?.remediation.recommendation ?? '').filter(Boolean);
-      const remediationStatuses = item.missingSources.map((sourceId) => options.sourceMetadata?.[sourceId]?.remediation.status ?? '').filter(Boolean);
+      const remediation = item.missingSources.map(
+        (sourceId) => options.remediationState?.[sourceId] ?? options.sourceMetadata?.[sourceId]?.remediation,
+      );
+      const gapOwners = remediation.map((record) => record?.gapOwner ?? '').filter(Boolean);
+      const businessOwners = remediation.map((record) => record?.businessOwner ?? '').filter(Boolean);
+      const engineeringOwners = remediation.map((record) => record?.engineeringOwner ?? '').filter(Boolean);
+      const dueDates = remediation.map((record) => record?.targetDate ?? '').filter(Boolean);
+      const remediationPlans = remediation.map((record) => record?.recommendation ?? '').filter(Boolean);
+      const remediationStatuses = remediation.map((record) => record?.status ?? '').filter(Boolean);
+      const detectionUseCases = remediation.map((record) => record?.detectionUseCase ?? '').filter(Boolean);
+      const validationMethods = remediation.map((record) => record?.validationMethod ?? '').filter(Boolean);
+      const evidenceReferences = remediation.map((record) => record?.evidenceReference ?? '').filter(Boolean);
       const criticalVerificationQuestions = item.missingSources
         .flatMap((sourceId) => sourceById.get(sourceId)?.verificationChecks ?? [])
         .filter((check) => check.priority === 'critical')
@@ -230,9 +239,13 @@ export function buildGapsCsv(summary: CoverageSummary, sources: LogSource[], opt
         missingSources.join('; '),
         gapOwners.join('; '),
         businessOwners.join('; '),
+        engineeringOwners.join('; '),
         dueDates.join('; '),
         remediationStatuses.join('; '),
         remediationPlans.join(' | '),
+        detectionUseCases.join(' | '),
+        validationMethods.join(' | '),
+        evidenceReferences.join(' | '),
         priorityGapChecks.join(' | '),
         criticalVerificationQuestions.join(' | '),
         gapQuestions.join(' | '),
@@ -260,9 +273,13 @@ export function buildGapsCsv(summary: CoverageSummary, sources: LogSource[], opt
       'missing_sources',
       'gap_owners',
       'business_owners',
+      'engineering_owners',
       'target_dates',
       'remediation_statuses',
       'remediation_recommendations',
+      'detection_use_cases',
+      'validation_methods',
+      'evidence_references',
       'priority_gap_checks',
       'critical_verification_questions',
       'gap_questions',
