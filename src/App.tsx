@@ -44,17 +44,16 @@ const primaryViews = [
   { id: 'Overview', label: 'Overview', hint: 'Assessment details, current coverage, and top gaps.' },
   { id: 'Scope', label: 'Scope', hint: 'Confirm in-scope domains, handling boundaries, and context.' },
   { id: 'Verify', label: 'Source Readiness', hint: 'Verify critical evidence checks and maturity states.' },
-  { id: 'Scenarios', label: 'Attack Scenarios', hint: 'Test investigation coverage against realistic attack paths.' },
+  { id: 'Scenarios', label: 'Threat Modelling', hint: 'Test investigation coverage against realistic threat paths.' },
   { id: 'Gaps', label: 'Gaps', hint: 'Prioritize remediation owners, dates, and open debt.' },
-  { id: 'Report', label: 'Report', hint: 'Export, save, import, and compare assessments.' },
-  { id: 'References', label: 'References', hint: 'Use supporting views, definitions, catalogue notes, and handling boundaries.' },
+  { id: 'Report', label: 'Report', hint: 'Review the executive report and export assessment data.' },
+  { id: 'References', label: 'References', hint: 'Trace risk scores and look up assessment terms.' },
 ] as const;
 type PrimaryView = (typeof primaryViews)[number]['id'];
 
 const secondaryViews = [
-  { id: 'Risk Matrix', label: 'Risk Matrix' },
-  { id: 'Glossary', label: 'Glossary' },
-  { id: 'Catalogue Notes', label: 'Catalogue Notes' },
+  { id: 'Risk register', label: 'Risk register' },
+  { id: 'Definitions', label: 'Definitions' },
 ] as const;
 type SecondaryView = (typeof secondaryViews)[number]['id'];
 
@@ -74,7 +73,7 @@ const guideAssessmentMetadata: AssessmentMetadata = {
 
 function App() {
   const [activeView, setActiveView] = useState<PrimaryView>('Overview');
-  const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk Matrix');
+  const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk register');
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('real');
   const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('real'));
   const [remediationState, setRemediationState] = useState<RemediationState>(() => createBlankRemediationState());
@@ -408,7 +407,7 @@ function App() {
           <span className="hub-mark" aria-hidden="true">S6</span>
           <span>Security Engineering Hub</span>
         </a>
-        <h1>Gaps Analysis Tool</h1>
+        <h1>Gaps Analysis Tool <small>by S6</small></h1>
         <button className={assessmentMode === 'demo' ? 'active' : ''} onClick={() => setMode(assessmentMode === 'demo' ? 'real' : 'demo')}>
           {assessmentMode === 'demo' ? 'Exit guide' : 'New user guide'}
         </button>
@@ -523,7 +522,6 @@ function App() {
 
         {activeView === 'Report' && (
           <ReportHubPanel
-            metadata={metadata}
             report={executiveReport}
             snapshots={snapshots}
             selectedSnapshotId={selectedSnapshotId}
@@ -543,9 +541,9 @@ function App() {
           <section className="stack" aria-labelledby="references-heading">
             <section className="panel reference-hub">
               <div>
-                <p className="eyebrow">Final step · References</p>
-                <h2 id="references-heading">Reference material</h2>
-                <p className="tight-copy">Review definitions, mappings, and data-handling guidance.</p>
+                <p className="eyebrow">Supporting detail</p>
+                <h2 id="references-heading">Check how a result was reached</h2>
+                <p className="tight-copy">Trace readiness scores back to evidence questions, or look up an assessment term. Nothing on this page changes the assessment.</p>
               </div>
               <div className="button-row" role="group" aria-label="Reference views">
                 {secondaryViews.map((view) => (
@@ -556,7 +554,7 @@ function App() {
               </div>
             </section>
 
-            {activeReferenceView === 'Risk Matrix' && (
+            {activeReferenceView === 'Risk register' && (
               <RiskMatrixPanel
                 vectors={filteredVectors}
                 domainFilter={domainFilter}
@@ -569,23 +567,7 @@ function App() {
                 onQueryChange={setQuery}
               />
             )}
-            {activeReferenceView === 'Glossary' && <GlossaryPanel query={glossaryQuery} onQueryChange={setGlossaryQuery} />}
-            {activeReferenceView === 'Catalogue Notes' && <CatalogueNotes />}
-
-            <section className="panel trust-boundary">
-              <div>
-                <p className="eyebrow">Trust boundary</p>
-                <p className="tight-copy">Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing.</p>
-              </div>
-              <details>
-                <summary>Handling caveats</summary>
-                <ul className="prose-list">
-                  <li>This app visualizes investigation readiness, gap priority, and scenario coverage from positively verified evidence.</li>
-                  <li>It does not replace SIEM, EDR, DLP, case-management, or analyst judgment.</li>
-                  <li>Communications, workforce, physical access, and behavioral context require minimum-necessary access, approval, and corroboration.</li>
-                </ul>
-              </details>
-            </section>
+            {activeReferenceView === 'Definitions' && <GlossaryPanel query={glossaryQuery} onQueryChange={setGlossaryQuery} />}
           </section>
         )}
       </main>
@@ -1248,8 +1230,8 @@ function RiskMatrixPanel({
     <section className="panel">
       <div className="panel-title-row">
         <div>
-          <p className="eyebrow">Risk Matrix</p>
-          <h2>Vectors, evidence questions, and maturity-weighted readiness</h2>
+          <p className="eyebrow">Risk register</p>
+          <h2>Evidence behind each readiness score</h2>
         </div>
         <div className="filters">
           <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search vectors or questions" />
@@ -1467,7 +1449,6 @@ function GapAnalysisPanel({
 }
 
 function ReportHubPanel({
-  metadata,
   report,
   snapshots,
   selectedSnapshotId,
@@ -1481,7 +1462,6 @@ function ReportHubPanel({
   onSelect,
   onImportClick,
 }: {
-  metadata: AssessmentMetadata;
   report: ReturnType<typeof buildExecutiveReport>;
   snapshots: AssessmentSnapshot[];
   selectedSnapshotId: string;
@@ -1500,79 +1480,64 @@ function ReportHubPanel({
       <div className="panel">
         <div className="panel-title-row">
           <div>
-            <p className="eyebrow">Report</p>
-            <h2>Export results and compare saved assessments</h2>
+            <p className="eyebrow">Executive report</p>
+            <h2>Review the assessment before sharing it</h2>
           </div>
-          <div className="button-row">
-            <button className="primary-action" onClick={onOpenPrintableReport}>
-              Open printable executive report
-            </button>
-            <button onClick={onExportMarkdown}>
-              Export Markdown report
-            </button>
-            <button onClick={onExportGapsCsv}>Export gaps CSV</button>
-            <button onClick={onExportSnapshot}>Export JSON snapshot</button>
-          </div>
+          <button className="primary-action" onClick={onOpenPrintableReport}>Open executive report</button>
         </div>
         <p className="summary-callout">{report.plainEnglishSummary}</p>
-        <div className="grid two-col hub-grid">
-          <section className="mini-panel">
-            <strong>Leadership report</strong>
-            <p>Markdown executive summary with readiness, gaps, caveats, catalogue version, and generation timestamp.</p>
-          </section>
-          <section className="mini-panel">
-            <strong>Working files</strong>
-            <p>CSV gap register plus JSON snapshot export/import for local reuse, handoff, and regression comparison.</p>
-          </section>
+        <div className="report-purpose">
+          <strong>Before distribution</strong>
+          <p>Confirm the assessment owner, scope, gap owners, and target dates. Unrecorded fields remain visibly unassigned in the report.</p>
+        </div>
+        <div className="report-export-group">
+          <div>
+            <strong>Supporting files</strong>
+            <p>Use CSV for the remediation register, Markdown for editable narrative, or JSON to move the full assessment between browsers.</p>
+          </div>
+          <div className="button-row">
+            <button onClick={onExportGapsCsv}>Export gaps CSV</button>
+            <button onClick={onExportMarkdown}>Export Markdown</button>
+            <button onClick={onExportSnapshot}>Export assessment JSON</button>
+          </div>
         </div>
       </div>
       <div className="stack">
         <section className="panel">
           <div className="panel-title-row">
             <div>
-              <p className="eyebrow">Snapshots</p>
-              <h2>Save, import, and compare point-in-time assessments</h2>
+              <p className="eyebrow">Optional progress tracking</p>
+              <h2>Compare with an earlier assessment</h2>
             </div>
             <div className="button-row">
-              <button className="primary-action" onClick={onSave}>
-                Save locally
-              </button>
+              <button className="primary-action" onClick={onSave}>Save locally</button>
               <button onClick={onImportClick}>Import snapshot</button>
             </div>
           </div>
-          <p className="tight-copy">
-            Current assessment: <strong>{metadata.name}</strong>. Local snapshots stay in this browser unless you export them.
-          </p>
+          <p className="tight-copy">Save a dated copy before making changes. Browser snapshots stay on this device unless exported as JSON.</p>
           <div className="compact-list">
             {snapshots.length === 0 && <div className="list-card">No saved snapshots yet.</div>}
             {snapshots.map((snapshot) => (
               <button className={`snapshot-row ${selectedSnapshotId === snapshot.id ? 'active' : ''}`} key={snapshot.id} onClick={() => onSelect(snapshot.id)}>
                 <strong>{snapshot.metadata.name}</strong>
-                <small>
-                  {snapshot.mode === 'demo' ? 'Demo' : 'Real'} · {formatDate(snapshot.createdAt)} · {snapshot.metadata.owner || 'No owner'}
-                </small>
+                <small>{snapshot.mode === 'demo' ? 'Demo' : 'Real'} · {formatDate(snapshot.createdAt)} · {snapshot.metadata.owner || 'No owner'}</small>
               </button>
             ))}
           </div>
         </section>
-        <section className="panel">
-          <p className="eyebrow">Comparison</p>
-          <h2>Current vs selected snapshot</h2>
-          {!selectedSnapshot && <p>Select a saved snapshot to compare.</p>}
-          {selectedSnapshot && comparison && (
-            <>
-              <p className="tight-copy">
-                Comparing against <strong>{selectedSnapshot.metadata.name}</strong> from {formatDate(selectedSnapshot.createdAt)}.
-              </p>
-              <div className="metric-grid compact-metrics">
-                <Metric label="Coverage delta" value={signedPercent(comparison.scoreDelta)} />
-                <Metric label="Gap delta" value={signedCount(comparison.highRiskGapDelta)} />
-                <Metric label="Ready-source delta" value={signedCount(comparison.readySourceDelta)} />
-                <Metric label="Evidence-check delta" value={signedCount(comparison.evidenceCheckDelta)} />
-              </div>
-            </>
-          )}
-        </section>
+        {selectedSnapshot && comparison && (
+          <section className="panel">
+            <p className="eyebrow">Change since snapshot</p>
+            <h2>{selectedSnapshot.metadata.name}</h2>
+            <p className="tight-copy">Saved {formatDate(selectedSnapshot.createdAt)}. Positive coverage and evidence-check deltas indicate improved readiness; fewer gaps is an improvement.</p>
+            <div className="metric-grid compact-metrics">
+              <Metric label="Coverage delta" value={signedPercent(comparison.scoreDelta)} />
+              <Metric label="Gap delta" value={signedCount(comparison.highRiskGapDelta)} />
+              <Metric label="Ready-source delta" value={signedCount(comparison.readySourceDelta)} />
+              <Metric label="Evidence-check delta" value={signedCount(comparison.evidenceCheckDelta)} />
+            </div>
+          </section>
+        )}
       </div>
     </section>
   );
@@ -1607,22 +1572,6 @@ function GlossaryPanel({
           </article>
         ))}
       </div>
-    </section>
-  );
-}
-
-function CatalogueNotes() {
-  return (
-    <section className="panel prose">
-      <p className="eyebrow">Catalogue notes</p>
-      <h2>Assessment catalogue</h2>
-      <ul className="prose-list">
-        <li>Catalogue version: <strong>{catalogue.version}</strong></li>
-        <li>{catalogue.summary}</li>
-        <li>{catalogue.note}</li>
-        <li>This product visualizes readiness gaps and verified evidence coverage. It does not ingest or replay raw events.</li>
-        <li>HR, physical, email, and behavioral context remain corroborating inputs with privacy/legal handling constraints.</li>
-      </ul>
     </section>
   );
 }

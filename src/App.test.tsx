@@ -39,13 +39,13 @@ describe('App integrated assessment experience', () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
 
-    expect(screen.getByRole('heading', { name: /^Gaps Analysis Tool$/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Gaps Analysis Tool by S6$/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Define the scope, verify the evidence, then review the gaps/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Assessment details and current evidence coverage/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^Overview/i })).toHaveAttribute('aria-current', 'step');
     expect(within(workflowNav).getByRole('button', { name: /Scope/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /Source Readiness/i })).toBeInTheDocument();
-    expect(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i })).toBeInTheDocument();
+    expect(within(workflowNav).getByRole('button', { name: /Threat Modelling/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^Gaps/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^Report/i })).toBeInTheDocument();
     expect(within(workflowNav).getByRole('button', { name: /^References/i })).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('App integrated assessment experience', () => {
 
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Scope/i }));
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Source Readiness/i }));
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
     expect(screen.getByRole('heading', { name: /Follow the attack\. Check the evidence/i })).toBeInTheDocument();
 
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
@@ -102,7 +102,7 @@ describe('App integrated assessment experience', () => {
   it('offers a 2D/3D switch over one threat model, with the 2D map authoritative by default', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     const modeSwitch = screen.getByRole('group', { name: /Visualisation mode/i });
     expect(within(modeSwitch).getByRole('button', { name: '2D Attack Chain Map' })).toHaveAttribute('aria-pressed', 'true');
@@ -114,7 +114,7 @@ describe('App integrated assessment experience', () => {
   it('renders the accepted attack chain in order in the 2D map', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     const map = screen.getByRole('region', { name: /Attack chain map/i });
     const headers = within(map)
@@ -138,7 +138,7 @@ describe('App integrated assessment experience', () => {
   it('keeps accepted risk visible as a gap that contributes no coverage', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     expect(screen.getAllByText(/accepted risk/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Accepted risk, no coverage/i)).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe('App integrated assessment experience', () => {
   it('names what each control actually does instead of implying every control is a hard stop', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     const legend = screen.getByText(/What a control actually does/i).closest('div') as HTMLElement;
     expect(within(legend).getByText(/Raises a credible signal\. It does not stop the action\./i)).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('App integrated assessment experience', () => {
   it('falls back to a flat simulation and points back at the 2D map when WebGL is unavailable', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
     await userEvent.click(screen.getByRole('button', { name: '3D Threat Simulation' }));
 
     const notice = screen.getByRole('status');
@@ -175,7 +175,7 @@ describe('App integrated assessment experience', () => {
   it('uses a compact scenario selector instead of a large grid of scenario buttons', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     const scenarioSelect = screen.getByRole('combobox', { name: /Threat scenario/i });
     expect(screen.queryByRole('group', { name: /Threat scenario/i })).not.toBeInTheDocument();
@@ -196,7 +196,7 @@ describe('App integrated assessment experience', () => {
   it('provides a browsable insider-focused scenario library with ATT&CK references', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
-    await userEvent.click(within(workflowNav).getByRole('button', { name: /Attack Scenarios/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /Threat Modelling/i }));
 
     await userEvent.click(screen.getByRole('button', { name: /Browse scenario library/i }));
     expect(screen.getByRole('region', { name: /Attack scenario library/i })).toBeInTheDocument();
@@ -210,17 +210,18 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('radio', { name: /Phishing to ransomware/i })).toBeInTheDocument();
   });
 
-  it('keeps reference views and trust guidance in the final workflow step only', async () => {
+  it('keeps supporting risk evidence and definitions in the final workflow step only', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
 
     expect(screen.queryByRole('group', { name: /Reference views/i })).not.toBeInTheDocument();
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^References/i }));
 
-    expect(screen.getByRole('heading', { name: /Reference material/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Check how a result was reached/i })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /Reference views/i })).toBeInTheDocument();
-    expect(screen.getByText(/Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing/i)).toBeInTheDocument();
-    expect(screen.getByText('Handling caveats')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Risk register/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Definitions/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Trust boundary|Handling caveats|Catalogue notes/i)).not.toBeInTheDocument();
   });
 
   it('moves between workflow steps with arrow keys', async () => {
@@ -280,11 +281,11 @@ describe('App integrated assessment experience', () => {
 
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
 
-    expect(screen.getByRole('heading', { name: /Export results and compare saved assessments/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Export Markdown report/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Review the assessment before sharing it/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export Markdown/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Export gaps CSV/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Export JSON snapshot/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Open printable executive report/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export assessment JSON/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open executive report/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Save locally/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Import snapshot/i })).toBeInTheDocument();
   });
@@ -295,7 +296,7 @@ describe('App integrated assessment experience', () => {
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
     await userEvent.click(screen.getByRole('button', { name: /New user guide/i }));
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
-    await userEvent.click(screen.getByRole('button', { name: /Open printable executive report/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Open executive report/i }));
 
     expect(screen.getByRole('main')).toHaveClass('print-report-view');
     expect(screen.getByRole('note')).toHaveTextContent(/Demo — synthetic data/i);

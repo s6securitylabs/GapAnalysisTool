@@ -67,12 +67,12 @@ export function PrintableExecutiveReport({
         {mode === 'demo' && <div className="demo-report-banner" role="note">Demo — synthetic data</div>}
         <header className="report-cover report-page">
           <div className="report-brand-row">
-            <div className="report-brand"><span>S6</span><strong>Security Engineering Hub</strong></div>
+            <div className="report-brand"><span>S6</span><div><strong>Gaps Analysis Tool</strong><small>by S6</small></div></div>
             <span className={`report-rag report-rag-${report.rag}`}>{report.rag.toUpperCase()}</span>
           </div>
           <div className="report-cover-grid">
             <div>
-              <p className="report-kicker">Security evidence readiness</p>
+              <p className="report-kicker">Executive evidence-readiness report</p>
               <h1>{metadata.name || 'Untitled assessment'}</h1>
               <p className="report-deck">Executive view of investigation readiness, material evidence gaps, exposed attack paths, and remediation priorities.</p>
               <dl className="report-meta">
@@ -151,7 +151,7 @@ export function PrintableExecutiveReport({
 
         <section className="report-section report-page-break-before">
           <div className="report-section-heading">
-            <div><p className="report-kicker">Attack paths</p><h2>Scenarios with the weakest evidence</h2></div>
+            <div><p className="report-kicker">Threat modelling</p><h2>Scenarios with the weakest evidence</h2></div>
             <p>These results reflect verified source readiness for each priority investigation path; they do not infer compromise or wrongdoing.</p>
           </div>
           <div className="scenario-risk-grid">
@@ -190,7 +190,7 @@ export function PrintableExecutiveReport({
           <footer className="report-footer">
             <div><strong>Decision note</strong><p>{metadata.notes || 'No additional decision note was recorded.'}</p></div>
             <div><strong>Evidence boundary</strong><p>This report measures evidence readiness. It does not ingest raw logs, prove malicious intent, or replace investigation and legal review.</p></div>
-            <small>Gaps Analysis Tool · Catalogue {catalogue.version} · Generated {generatedAt.toISOString()}</small>
+            <small>Gaps Analysis Tool by S6 · Assessment model {catalogue.version} · Generated {generatedAt.toISOString()}</small>
           </footer>
         </section>
       </article>

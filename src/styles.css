@@ -2654,6 +2654,34 @@ small {
   color: #15324d;
 }
 
+.app-header h1 small {
+  display: inline-block;
+  margin-left: 0.35rem;
+  color: var(--text-soft);
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.report-purpose,
+.report-export-group {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-muted);
+}
+
+.report-purpose p,
+.report-export-group p {
+  margin: 5px 0 0;
+}
+
+.report-export-group {
+  display: grid;
+  gap: 12px;
+}
+
 .report-brand > span {
   display: grid;
   place-items: center;
@@ -2670,10 +2698,33 @@ small {
   display: inline-flex;
   align-items: center;
   width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
   border-radius: 999px;
   padding: 5px 9px;
   font-size: 0.7rem;
   font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.report-brand > div {
+  display: grid;
+  gap: 1px;
+}
+
+.report-brand strong,
+.report-brand small {
+  display: block;
+  margin: 0;
+}
+
+.report-brand small {
+  color: #597086;
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2942,6 +2993,7 @@ small {
   .report-table { font-size: 7.5pt; }
   .report-table th,
   .report-table td { padding: 2.2mm 1.5mm; }
+  .report-severity { padding: 1.2mm 1.8mm; font-size: 6pt; letter-spacing: 0.04em; }
   .report-footer { break-inside: avoid; }
   .demo-report-banner {
     position: fixed;
