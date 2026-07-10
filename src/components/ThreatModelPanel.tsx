@@ -68,6 +68,7 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
           <p className="tight-copy">
             Choose a scenario to see the actions, evidence, controls, gaps, and response work at each stage. {threatModel.safety}
           </p>
+          <p className="model-boundary">These scenario maps show example evidence requirements. They do not score the current assessment; verified investigation coverage appears below.</p>
         </div>
         <div className="mode-switch" role="group" aria-label="Visualisation mode">
           <button className={mode === '2d' ? 'active' : ''} aria-pressed={mode === '2d'} onClick={() => setMode('2d')}>
@@ -123,15 +124,19 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
             </div>
           </div>
           <p className="library-boundary"><strong>Indicative ATT&amp;CK references.</strong> Validate mappings against your environment; non-malicious insider events may have no ATT&amp;CK equivalent.</p>
-          <div className="scenario-library-grid">
+          <div className="scenario-library-grid" role="radiogroup" aria-label="Choose an attack scenario">
             {libraryScenarios.map((item) => {
               const techniques = scenarioTechniques(item);
               return (
                 <button
                   className={`scenario-library-card ${scenario.id === item.id ? 'active' : ''}`}
                   key={item.id}
-                  onClick={() => setScenarioId(item.id)}
-                  aria-pressed={scenario.id === item.id}
+                  onClick={() => {
+                    setScenarioId(item.id);
+                    setLibraryOpen(false);
+                  }}
+                  role="radio"
+                  aria-checked={scenario.id === item.id}
                 >
                   <span className={`kind-tag ${item.kind}`}>{item.kind === 'internal' ? 'Insider / workforce' : 'External cyber'}</span>
                   <strong>{item.title}</strong>
@@ -156,7 +161,7 @@ export function ThreatModelPanel({ sourceById }: { sourceById: Map<LogSourceId, 
             Export JSON
           </button>
           <span className="pill info-pill">
-            {outcome.coveredStages}/{outcome.inPathStages} stages covered · {outcome.acceptedRiskStages} accepted risk
+            Example model: {outcome.coveredStages}/{outcome.inPathStages} stages show usable evidence · {outcome.acceptedRiskStages} accepted risk
           </span>
         </div>
       </div>

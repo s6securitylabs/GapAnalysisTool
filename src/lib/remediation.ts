@@ -18,6 +18,27 @@ export function createInitialRemediationState(): RemediationState {
   ) as RemediationState;
 }
 
+/** Start a real assessment without implying that owners, dates, or plans have been agreed. */
+export function createBlankRemediationState(): RemediationState {
+  return Object.fromEntries(
+    Object.entries(sourceMetadata).map(([sourceId, metadata]) => [
+      sourceId,
+      {
+        ...metadata.remediation,
+        gapOwner: '',
+        businessOwner: '',
+        engineeringOwner: '',
+        targetDate: '',
+        status: 'not-started',
+        evidenceReference: '',
+        acceptedRiskRationale: '',
+        riskReviewDate: '',
+        notes: '',
+      },
+    ]),
+  ) as RemediationState;
+}
+
 /** Merge imported state over catalogue defaults so older snapshots remain usable as fields evolve. */
 export function normalizeRemediationState(value?: Partial<RemediationState>): RemediationState {
   const defaults = createInitialRemediationState();

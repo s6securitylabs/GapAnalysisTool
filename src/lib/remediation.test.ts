@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { buildRemediationStats, createInitialRemediationState, remediationGovernanceWarnings } from './remediation';
+import { buildRemediationStats, createBlankRemediationState, createInitialRemediationState, remediationGovernanceWarnings } from './remediation';
 
 describe('remediation lifecycle', () => {
+  it('starts real assessments without invented owners, dates, or agreed status', () => {
+    const record = createBlankRemediationState()['idp-auth'];
+
+    expect(record.gapOwner).toBe('');
+    expect(record.businessOwner).toBe('');
+    expect(record.engineeringOwner).toBe('');
+    expect(record.targetDate).toBe('');
+    expect(record.status).toBe('not-started');
+    expect(record.recommendation).not.toBe('');
+  });
+
   it('flags overdue and blocked active actions', () => {
     const state = createInitialRemediationState();
     state['proxy-dns'] = { ...state['proxy-dns'], status: 'blocked', targetDate: '2026-06-01' };

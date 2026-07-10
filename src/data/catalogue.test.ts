@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { catalogue, logSources, riskVectors } from './catalogue';
 
-describe('threat-scenario catalogue seed data', () => {
+describe('threat-scenario catalogue data', () => {
   it('exposes non-empty sources and risk vectors', () => {
-    expect(catalogue.version).toBe('seed-0.2.0');
+    expect(catalogue.version).toBe('0.3.0');
     expect(logSources.length).toBeGreaterThan(0);
     expect(riskVectors.length).toBeGreaterThan(0);
   });

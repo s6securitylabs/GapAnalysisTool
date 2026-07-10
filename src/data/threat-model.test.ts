@@ -20,6 +20,19 @@ describe('canonical threat model', () => {
     expect(threatModel.scenarios.filter((scenario) => scenario.kind === 'internal')).toHaveLength(9);
   });
 
+  it('keeps scenario identifiers unique', () => {
+    const ids = threatModel.scenarios.map((scenario) => scenario.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('includes indicative ATT&CK references for adversarial curated scenarios', () => {
+    for (const id of ['third-party-cloud-export', 'break-glass-credential-misuse', 'detection-pipeline-suppression']) {
+      const scenario = threatModel.scenarios.find((item) => item.id === id);
+      expect(scenario).toBeDefined();
+      expect(scenario?.stages.some((stage) => /^T\d{4}(?:\.\d{3})?\b/.test(stage.action.technique ?? ''))).toBe(true);
+    }
+  });
+
   it('covers the required insider, third-party, cloud, ransomware, and engineering themes', () => {
     const requiredThemes: ThreatScenarioTheme[] = [
       'insider-misuse',

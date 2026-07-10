@@ -26,11 +26,6 @@ export const glossary: GlossaryTerm[] = [
     whyItMatters: 'The decision trail can explain why a risky session was allowed or stopped.',
   },
   {
-    term: 'DLP',
-    plainEnglish: 'Controls that detect sensitive data movement and may block, warn, or log it.',
-    whyItMatters: 'DLP helps classify impact, but only where the policy actually inspects the channel in question.',
-  },
-  {
     term: 'Process lineage',
     plainEnglish: 'A chain showing which process launched which child process and with what command line.',
     whyItMatters: 'It helps prove staging, automation, compression, and concealment on endpoints.',

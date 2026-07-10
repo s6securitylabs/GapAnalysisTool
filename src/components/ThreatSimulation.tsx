@@ -671,8 +671,7 @@ function SimulationLegend() {
 }
 
 /**
- * Progressive fallback. No WebGL, no loss of meaning: the same timeline, drawn flat, with an
- * explicit pointer back to the authoritative view.
+ * Progressive fallback. No WebGL, no loss of meaning: the same timeline drawn flat.
  */
 function SimulationFallback({ scenario, events }: { scenario: ThreatScenario; events: SimulationEvent[] }) {
   const width = 100;
@@ -683,8 +682,7 @@ function SimulationFallback({ scenario, events }: { scenario: ThreatScenario; ev
         <strong>3D Threat Simulation unavailable</strong>
         <p>
           3D is not supported in this environment because WebGL is unavailable or blocked. Try the 3D Threat Simulation in a
-          modern browser with hardware acceleration and WebGL enabled, or switch back to the 2D Attack Chain Map above. The 2D
-          map is the authoritative view and holds the same threat model.
+          modern browser with hardware acceleration and WebGL enabled, or use the 2D Attack Chain Map above instead.
         </p>
       </div>
 

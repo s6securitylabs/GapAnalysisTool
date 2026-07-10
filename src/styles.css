@@ -1420,7 +1420,8 @@ small {
   line-height: 1.35;
 }
 
-.library-boundary {
+.library-boundary,
+.model-boundary {
   color: var(--text-soft);
   font-size: 0.74rem;
 }

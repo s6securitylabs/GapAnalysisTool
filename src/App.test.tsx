@@ -63,6 +63,10 @@ describe('App integrated assessment experience', () => {
   it('starts as a real assessment and only seeds example evidence when the new user guide is opened', async () => {
     render(<App />);
     const workflowNav = screen.getByRole('navigation', { name: /Assessment steps/i });
+    const assessmentName = screen.getByRole('textbox', { name: /Assessment name/i });
+    expect(assessmentName).toHaveValue('Untitled assessment');
+    await userEvent.clear(assessmentName);
+    await userEvent.type(assessmentName, 'Real assessment in progress');
 
     await userEvent.click(within(workflowNav).getByRole('button', { name: /Source Readiness/i }));
 
@@ -73,6 +77,11 @@ describe('App integrated assessment experience', () => {
     expect(screen.getByRole('button', { name: /Exit guide/i })).toBeInTheDocument();
     expect(screen.getByText(/Example data is loaded/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Verify all demo checks' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear evidence' })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Exit guide/i }));
+    await userEvent.click(within(workflowNav).getByRole('button', { name: /^Overview/i }));
+    expect(screen.getByRole('textbox', { name: /Assessment name/i })).toHaveValue('Real assessment in progress');
   });
 
   it('supports the ordered workflow spine and local snapshot saving', async () => {
@@ -87,7 +96,7 @@ describe('App integrated assessment experience', () => {
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^Report/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Save locally' }));
 
-    expect(screen.getAllByText(/FY26 evidence gap assessment/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Untitled assessment/i).length).toBeGreaterThan(0);
   });
 
   it('offers a 2D/3D switch over one threat model, with the 2D map authoritative by default', async () => {
@@ -157,8 +166,7 @@ describe('App integrated assessment experience', () => {
     expect(within(notice).getByText(/3D Threat Simulation unavailable/i)).toBeInTheDocument();
     expect(within(notice).getByText(/3D is not supported in this environment because WebGL is unavailable or blocked/i)).toBeInTheDocument();
     expect(within(notice).getByText(/Try the 3D Threat Simulation in a modern browser with hardware acceleration and WebGL enabled/i)).toBeInTheDocument();
-    expect(within(notice).getByText(/switch back to the 2D Attack Chain Map above/i)).toBeInTheDocument();
-    expect(within(notice).getByText(/The 2D map is the authoritative view/i)).toBeInTheDocument();
+    expect(within(notice).getByText(/use the 2D Attack Chain Map above instead/i)).toBeInTheDocument();
     expect(screen.getByText('3D simulation legend')).toBeInTheDocument();
     expect(screen.getByText(/Lit telemetry\/evidence beam/i)).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Flat simulation of/i })).toBeInTheDocument();
@@ -193,13 +201,13 @@ describe('App integrated assessment experience', () => {
     await userEvent.click(screen.getByRole('button', { name: /Browse scenario library/i }));
     expect(screen.getByRole('region', { name: /Attack scenario library/i })).toBeInTheDocument();
     expect(screen.getByText(/9 insider and workforce scenarios/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /USB data theft/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /USB data theft/i })).toBeInTheDocument();
     expect(screen.getAllByText(/T1052\.001/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Indicative ATT&CK references/i)).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: /Scenario type/i }), 'cyber');
-    expect(screen.queryByRole('button', { name: /USB data theft/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Phishing to ransomware/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /USB data theft/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Phishing to ransomware/i })).toBeInTheDocument();
   });
 
   it('keeps reference views and trust guidance in the final workflow step only', async () => {
@@ -209,7 +217,7 @@ describe('App integrated assessment experience', () => {
     expect(screen.queryByRole('group', { name: /Reference views/i })).not.toBeInTheDocument();
     await userEvent.click(within(workflowNav).getByRole('button', { name: /^References/i }));
 
-    expect(screen.getByRole('heading', { name: /Supporting views and assessment boundaries/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Reference material/i })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /Reference views/i })).toBeInTheDocument();
     expect(screen.getByText(/Readiness worksheet only: no event ingestion, replay, or automatic proof of wrongdoing/i)).toBeInTheDocument();
     expect(screen.getByText('Handling caveats')).toBeInTheDocument();
@@ -234,7 +242,6 @@ describe('App integrated assessment experience', () => {
     await userEvent.type(assessmentName, 'Stakeholder workshop overview');
 
     expect(screen.getByDisplayValue('Stakeholder workshop overview')).toBeInTheDocument();
-    expect(screen.getByText('Stakeholder workshop overview')).toBeInTheDocument();
   });
 
   it('explains why each log source is wanted and its positive and negative impact', async () => {

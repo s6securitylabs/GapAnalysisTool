@@ -31,6 +31,7 @@ import {
 } from './lib/snapshots';
 import {
   buildRemediationStats,
+  createBlankRemediationState,
   createInitialRemediationState,
   normalizeRemediationState,
   remediationGovernanceWarnings,
@@ -56,18 +57,27 @@ const secondaryViews = [
 ] as const;
 type SecondaryView = (typeof secondaryViews)[number]['id'];
 
+const defaultAssessmentMetadata: AssessmentMetadata = {
+  name: 'Untitled assessment',
+  owner: '',
+  notes: '',
+  scope: '',
+};
+
+const guideAssessmentMetadata: AssessmentMetadata = {
+  name: 'Example evidence gap assessment',
+  owner: 'Security operations',
+  notes: 'Example data for the new user guide.',
+  scope: 'Evidence available for priority security investigations.',
+};
+
 function App() {
   const [activeView, setActiveView] = useState<PrimaryView>('Overview');
   const [activeReferenceView, setActiveReferenceView] = useState<SecondaryView>('Risk Matrix');
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('real');
   const [sourceState, setSourceState] = useState<Record<LogSourceId, SourceAssessmentState>>(() => createInitialAssessmentState('real'));
-  const [remediationState, setRemediationState] = useState<RemediationState>(() => createInitialRemediationState());
-  const [metadata, setMetadata] = useState<AssessmentMetadata>({
-    name: 'FY26 evidence gap assessment',
-    owner: 'Security operations',
-    notes: '',
-    scope: 'Evidence available for priority security investigations.',
-  });
+  const [remediationState, setRemediationState] = useState<RemediationState>(() => createBlankRemediationState());
+  const [metadata, setMetadata] = useState<AssessmentMetadata>(defaultAssessmentMetadata);
   const [domainFilter, setDomainFilter] = useState('All domains');
   const [gapsOnly, setGapsOnly] = useState(false);
   const [query, setQuery] = useState('');
@@ -75,6 +85,11 @@ function App() {
   const [snapshots, setSnapshots] = useState<AssessmentSnapshot[]>(() => loadSnapshots(window.localStorage));
   const [selectedSnapshotId, setSelectedSnapshotId] = useState('');
   const importRef = useRef<HTMLInputElement>(null);
+  const preGuideState = useRef<{
+    metadata: AssessmentMetadata;
+    sourceState: Record<LogSourceId, SourceAssessmentState>;
+    remediationState: RemediationState;
+  } | null>(null);
 
   const sourceById = useMemo(() => new Map(catalogue.logSources.map((source) => [source.id, source])), []);
   const verificationSummary = useMemo(
@@ -124,14 +139,7 @@ function App() {
     () => catalogue.threatScenarios.map((scenario) => ({ scenario, status: getScenarioStatus(scenario, verificationSummary) })),
     [verificationSummary],
   );
-  const stoppedScenarioCount = scenarioStatuses.filter((item) => item.status.status === 'stopped').length;
-  const topRemediation = summary.topMissingSources[0]
-    ? {
-        source: sourceById.get(summary.topMissingSources[0].sourceId),
-        remediation: remediationState[summary.topMissingSources[0].sourceId],
-        count: summary.topMissingSources[0].count,
-      }
-    : null;
+
   const snapshotComparison = useMemo(() => {
     if (!selectedSnapshot) return null;
     const baselineVerification = buildVerificationSummary(catalogue.logSources, selectedSnapshot.sourceState);
@@ -177,14 +185,22 @@ function App() {
 
   function setMode(nextMode: AssessmentMode) {
     if (nextMode === assessmentMode) return;
-    // Switching mode reseeds evidence and discards current verification work. Guard against
-    // silently destroying an in-progress assessment (there is no autosave).
-    const hasWork = countVerifiedChecks(sourceState) > 0;
-    if (hasWork && !window.confirm(`Switching to ${nextMode === 'demo' ? 'Demo' : 'Real'} mode clears the current evidence and reseeds the worksheet. Save a snapshot first if you need it. Continue?`)) {
+
+    if (nextMode === 'demo') {
+      preGuideState.current = { metadata, sourceState, remediationState };
+      setAssessmentMode('demo');
+      setMetadata(guideAssessmentMetadata);
+      setSourceState(createInitialAssessmentState('demo'));
+      setRemediationState(createInitialRemediationState());
       return;
     }
-    setAssessmentMode(nextMode);
-    setSourceState(createInitialAssessmentState(nextMode));
+
+    const restored = preGuideState.current;
+    setAssessmentMode('real');
+    setMetadata(restored?.metadata ?? defaultAssessmentMetadata);
+    setSourceState(restored?.sourceState ?? createInitialAssessmentState('real'));
+    setRemediationState(restored?.remediationState ?? createBlankRemediationState());
+    preGuideState.current = null;
   }
 
   function updateSourceMaturity(sourceId: LogSourceId, maturity: VerificationMaturity) {
@@ -261,16 +277,12 @@ function App() {
     }));
   }
 
-  function applyPreset(mode: 'all' | 'baseline' | 'clear') {
+  function applyPreset(mode: 'all' | 'clear') {
     if (mode === 'clear') {
       setSourceState(createInitialAssessmentState('real'));
       return;
     }
 
-    if (mode === 'baseline') {
-      setSourceState(createInitialAssessmentState('demo'));
-      return;
-    }
 
     setSourceState(
       Object.fromEntries(
@@ -362,6 +374,7 @@ function App() {
       setMetadata(imported.metadata);
       setSourceState(imported.sourceState);
       setRemediationState(normalizeRemediationState(imported.remediationState));
+      preGuideState.current = null;
       const next = saveSnapshot(window.localStorage, imported);
       setSnapshots(next);
       setSelectedSnapshotId(imported.id);
@@ -389,42 +402,6 @@ function App() {
         </aside>
       )}
 
-      <section className="summary-strip" aria-label="Shared assessment summary">
-        <article className="summary-card">
-          <span className="summary-label">Scope</span>
-          <strong>{metadata.name}</strong>
-          <p>{metadata.scope}</p>
-          <small>{metadata.owner || 'Unassigned owner'}</small>
-        </article>
-        <article className="summary-card">
-          <span className="summary-label">Source readiness</span>
-          <strong>{formatPercent(summary.overallScore)}</strong>
-          <p>{verificationStats.investigationReadySources} ready sources and {verificationStats.partialSources} partial sources</p>
-          <small>{verificationStats.acceptedRiskSources} accepted risk</small>
-        </article>
-        <article className="summary-card">
-          <span className="summary-label">Priority investigation coverage</span>
-          <strong>
-            {stoppedScenarioCount}/{catalogue.threatScenarios.length} covered
-          </strong>
-          <p>{scenarioStatuses.filter((item) => item.status.status !== 'stopped').length} investigation paths still need stronger evidence coverage</p>
-          <small>{summary.highRiskGapCount} high/critical gaps remain</small>
-        </article>
-        <article className="summary-card">
-          <span className="summary-label">Top remediation action</span>
-          <strong>{topRemediation ? topRemediation.source?.name ?? 'Tracked source' : 'No active remediation queue'}</strong>
-          <p>
-            {topRemediation
-              ? `${topRemediation.remediation.recommendation}`
-              : 'All tracked priority source gaps are currently resolved.'}
-          </p>
-          <small>
-            {topRemediation
-              ? `${topRemediation.remediation.gapOwner} · ${topRemediation.remediation.targetDate} · ${topRemediation.count} mapped vectors`
-              : 'Review the report step for export and snapshot actions.'}
-          </small>
-        </article>
-      </section>
 
       <section className="panel workflow-shell">
         <div className="panel-title-row compact">
@@ -548,8 +525,8 @@ function App() {
             <section className="panel reference-hub">
               <div>
                 <p className="eyebrow">Final step · References</p>
-                <h2 id="references-heading">Supporting views and assessment boundaries</h2>
-                <p className="tight-copy">Use these materials after the working assessment. They are intentionally kept out of the ordered evidence and remediation flow.</p>
+                <h2 id="references-heading">Reference material</h2>
+                <p className="tight-copy">Review definitions, mappings, and data-handling guidance.</p>
               </div>
               <div className="button-row" role="group" aria-label="Reference views">
                 {secondaryViews.map((view) => (
@@ -807,7 +784,7 @@ function VerificationWorkspace({
   verificationSummary: ReturnType<typeof buildVerificationSummary>;
   verificationDebt: VerificationDebtItem[];
   remediationState: RemediationState;
-  onPreset: (mode: 'all' | 'baseline' | 'clear') => void;
+  onPreset: (mode: 'all' | 'clear') => void;
   onSourceMaturityChange: (sourceId: LogSourceId, maturity: VerificationMaturity) => void;
   onToggleCheck: (sourceId: LogSourceId, checkId: string) => void;
   onSourceEvidenceChange: (sourceId: LogSourceId, field: 'evidenceReference' | 'validatedBy' | 'validatedAt', value: string) => void;
@@ -851,8 +828,7 @@ function VerificationWorkspace({
               </button>
             )}
             {assessmentMode === 'demo' && <button onClick={() => onPreset('all')}>Verify all demo checks</button>}
-            <button onClick={() => onPreset('baseline')}>Load guided baseline</button>
-            <button onClick={() => onPreset('clear')}>Clear evidence</button>
+            {assessmentMode === 'real' && <button onClick={() => onPreset('clear')}>Clear evidence</button>}
           </div>
         </div>
         <div className="panel-title-row compact progress-strip">
@@ -1588,8 +1564,8 @@ function GlossaryPanel({
 function CatalogueNotes() {
   return (
     <section className="panel prose">
-      <p className="eyebrow">Catalogue Notes</p>
-      <h2>Catalogue integration status</h2>
+      <p className="eyebrow">Catalogue notes</p>
+      <h2>Assessment catalogue</h2>
       <ul className="prose-list">
         <li>Catalogue version: <strong>{catalogue.version}</strong></li>
         <li>{catalogue.summary}</li>

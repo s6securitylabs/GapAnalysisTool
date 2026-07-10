@@ -713,12 +713,12 @@ export const threatScenarios: ThreatScenario[] = [
   { id: 'compromised-account-driven', title: 'Compromised or outsmarted user', objective: 'Differentiate intentional internal misuse from phishing, token theft, social engineering, or malware-driven activity.', flowStepIds: ['access', 'collection', 'transfer'], vectorIds: ['compromised-outsmarted-user', 'negligent-mistaken-disclosure'], criticalSources: ['idp-auth', 'endpoint-edr'], recommendedSources: ['email', 'saas-audit', 'dlp'] },
   { id: 'physical-cyber-correlation', title: 'Physical/cyber anomaly', objective: 'Correlate badge/facility evidence with device, VPN, and identity sessions without treating location as standalone proof.', flowStepIds: ['trigger', 'access', 'collection'], vectorIds: ['physical-cyber-anomaly'], criticalSources: ['idp-auth'], recommendedSources: ['physical-access', 'vpn', 'endpoint-edr'] },
   { id: 'removable-media-exfil', title: 'Removable-media (USB) exfiltration', objective: 'Prove whether sensitive files were staged or copied to USB/removable media outside normal duties, and by which device and user.', flowStepIds: ['trigger', 'discovery', 'collection', 'transfer'], vectorIds: ['removable-media-exfil'], criticalSources: ['endpoint-edr'], recommendedSources: ['file-access', 'dlp', 'hr-case'] },
-  { id: 'collusion-ring', title: 'Cross-user collusion', objective: 'Reconstruct a multi-user timeline of coordinated access, collection, transfer, or approval bypass across several internals.', flowStepIds: ['trigger', 'access', 'discovery', 'collection', 'transfer'], vectorIds: ['collusion-cross-user'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['file-access', 'hr-case', 'siem-enrichment'] },
+  { id: 'collusion-ring', title: 'Cross-user collusion', objective: 'Reconstruct a multi-user timeline of coordinated access, collection, transfer, or approval bypass across multiple users.', flowStepIds: ['trigger', 'access', 'discovery', 'collection', 'transfer'], vectorIds: ['collusion-cross-user'], criticalSources: ['idp-auth', 'saas-audit'], recommendedSources: ['file-access', 'hr-case', 'siem-enrichment'] },
 ];
 
 export const catalogue: Catalogue = {
-  version: 'seed-0.2.0',
-  summary: 'Seed catalogue for threat-scenario evidence coverage and investigation readiness. Technique mappings are indicative implementation hints for local validation.',
+  version: '0.3.0',
+  summary: 'Evidence and investigation-readiness mappings. Validate technique mappings against your environment.',
   note: 'Evidence coverage and investigation readiness catalogue. Contextual signals require governance and corroboration, not prediction or standalone proof.',
   logSources,
   riskVectors,
