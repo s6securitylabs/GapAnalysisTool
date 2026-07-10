@@ -350,6 +350,26 @@ small {
   padding: 12px;
 }
 
+/* Keep compact-card headings visually separate from their descriptions. */
+.list-card > strong {
+  display: block;
+  line-height: 1.3;
+}
+
+.list-card > strong + small {
+  display: block;
+  margin-top: 7px;
+}
+
+.impact-card {
+  display: grid;
+  gap: 7px;
+}
+
+.impact-card > strong + small {
+  margin-top: 0;
+}
+
 .panel-title-row,
 .vector-header,
 .question-row,
